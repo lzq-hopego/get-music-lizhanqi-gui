@@ -6,7 +6,7 @@ opencv-python
 get-music-lizhanqi
 pyqt5
 ```
-![image](https://github.com/ButBueatiful/dotvim/raw/master/screenshots/vim-screenshot.jpg)
+![image](https://github.com/lzq-hopego/get-music-lizhanqi-gui/blob/main/test_img.jpg)
 
 如果你想了解get-music-lizhanqi怎么实现和怎么使用的请移步到我的主页查看他，他也是我的项目
 
