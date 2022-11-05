@@ -541,30 +541,10 @@ color: rgb(39, 255, 237);</string>
                </item>
               </layout>
              </widget>
-             <widget class="QLabel" name="label_12">
-              <property name="geometry">
-               <rect>
-                <x>70</x>
-                <y>50</y>
-                <width>160</width>
-                <height>160</height>
-               </rect>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">border-image: url(:/image/image/5.jpg);
-border-radius:80px;</string>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-              <property name="textFormat">
-               <enum>Qt::AutoText</enum>
-              </property>
-              <property name="scaledContents">
+             <widget class="QListWidget" name="listWidget_2">
+              <property name="enabled">
                <bool>true</bool>
               </property>
-             </widget>
-             <widget class="QListWidget" name="listWidget_2">
               <property name="geometry">
                <rect>
                 <x>10</x>
@@ -578,6 +558,26 @@ border-radius:80px;</string>
 font: 12pt &quot;幼圆&quot;;</string>
               </property>
              </widget>
+             <widget class="QPushButton" name="pushButton_8">
+              <property name="geometry">
+               <rect>
+                <x>20</x>
+                <y>20</y>
+                <width>160</width>
+                <height>160</height>
+               </rect>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">border-image: url(:/image/image/5.jpg);
+border-radius:80px;</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+             <zorder>frame_20</zorder>
+             <zorder>pushButton_8</zorder>
+             <zorder>listWidget_2</zorder>
             </widget>
            </item>
            <item>
@@ -680,7 +680,7 @@ border-bottom-right-radius:22px;
                 </property>
                 <property name="styleSheet">
                  <string notr="true">border-radius:40px;
-border-image: url(:/image/image/星光派对-赵希予-封面.jpg);
+border-image: url(:/image/image/5.jpg);
 </string>
                 </property>
                 <property name="text">
@@ -728,7 +728,7 @@ color:rgb(255,255,255);
 }</string>
                    </property>
                    <property name="text">
-                    <string>星光派对</string>
+                    <string>歌曲名字</string>
                    </property>
                   </widget>
                  </item>
@@ -748,7 +748,7 @@ color:rgb(255,255,255);
 }</string>
                    </property>
                    <property name="text">
-                    <string>赵希予</string>
+                    <string>歌手</string>
                    </property>
                   </widget>
                  </item>

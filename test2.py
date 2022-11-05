@@ -7,7 +7,6 @@ from ui2 import Ui_MainWindow
 import re
 import cv2
 from get_music import *
-import requests
 import numpy as np
 
 class Window(QMainWindow):
@@ -48,7 +47,7 @@ class Window(QMainWindow):
 
         self.soupage=False
         self.rotate=0 #记录封面旋转的角度
-        self.imgname=''
+        
         #封面是否旋转
         self.turn_fengmian=False
         self.init_play_back_mode()# 初始化播放模式
@@ -57,7 +56,7 @@ class Window(QMainWindow):
         self.this_songtime(0)#初始化歌词歌曲时长
         self.ui.listWidget_2.setVisible(False)#初始化listwidget2为不显示状态
         # #初始化歌词显示
-        # self.init_lrc()
+        self.init_lrc()
 
         self.ui.horizontalSlider_2.valueChanged.connect(self.setvolume)
         self.ui.horizontalSlider.sliderReleased.connect(self.getvalue)
@@ -74,14 +73,15 @@ class Window(QMainWindow):
         self.ui.pushButton_12.clicked.connect(self.undis_one)
         self.ui.pushButton_6.clicked.connect(self.search)
         self.ui.listWidget_2.doubleClicked.connect(self.list_download)
+        self.ui.pushButton_8.clicked.connect(self.fengmian)
+        # self.ui.pushButton.doubleClicked.connect(self.fengmian)
         # self.ui.pushButton_3.clicked.connect(self.dis_one)
         # self.ui.pushButton_7.clicked.connect(self.undis_one)
         # self.ui.widget_4.setVisible(False)
         
         #判断是否在播放时旋转封面，注意由于qt的限制我无法实现圆形封面旋转
         #采用的opencv圆形检测后并保存为test.jpg文件后再显示的，非常消耗内存，默认关闭
-        if self.turn_fengmian:
-            self.timer.timeout.connect(self.r_fengmian)
+        self.timer.timeout.connect(self.r_fengmian)
         
         #初始化搜索引擎
         self.song_name_list=[]
@@ -109,7 +109,7 @@ class Window(QMainWindow):
             self.ui.label_9.setVisible(False)
             self.ui.label_10.setVisible(False)
             self.ui.label_11.setVisible(False)
-            self.ui.label_12.setVisible(False)
+            self.ui.pushButton_8.setVisible(False)
             self.ui.listWidget_2.setVisible(True)
             self.soupage=True
     def dis_one(self):
@@ -121,7 +121,7 @@ class Window(QMainWindow):
             self.ui.label_9.setVisible(True)
             self.ui.label_10.setVisible(True)
             self.ui.label_11.setVisible(True)
-            self.ui.label_12.setVisible(True)
+            self.ui.pushButton_8.setVisible(True)
             self.ui.listWidget_2.setVisible(False)
             self.soupage=False
 
@@ -156,7 +156,7 @@ class Window(QMainWindow):
         lrc_url=self.is_api.get_music_lrc(num,return_url=True)
         
 
-        rstr = r"[\/\\\:\*\?\"\<\>\|]"  # '/ \ : * ? " < > |'
+        rstr = r"[\/\\\:\*\?\"\<\>\|\&]"  # '/ \ : * ? " < > |'
         name = re.sub(rstr, "_", name)  # 替换为下划线
         try:
             download.download(url,"./music/"+name+".mp3",or_re=False)
@@ -209,14 +209,12 @@ class Window(QMainWindow):
             self.state="stop"
             self.mixer.pause()
             self.ui.pushButton_3.setIcon(QIcon(":/image/image/播放_play.png"))
-            if self.turn_fengmian:
-                self.timer.stop()
+            self.timer.stop()
         elif self.state=="stop":
             self.state="start"
             self.mixer.play()
             self.ui.pushButton_3.setIcon(QIcon(":/image/image/暂停_pause-one.png"))
-            if self.turn_fengmian:
-                self.timer.start(250)
+            self.timer.start(250)
     def next(self):
         if self.playlist.nextIndex()==-1:
             name=self.songnamelist[self.playlist.nextIndex()+1]
@@ -246,7 +244,7 @@ class Window(QMainWindow):
     def songtitle(self):
         name=self.songnamelist[self.playlist.currentIndex()]
         self.ui.label.setText(name.split("-")[0])
-        self.ui.label_2.setText(name.split("-")[1].split(".")[0])
+        self.ui.label_2.setText(name.split("-")[-1].split(".")[0])
     # 获取歌曲长度
     def init_songtime(self):
         time_long=self.mixer.duration()
@@ -336,29 +334,31 @@ class Window(QMainWindow):
 "border-image: url(./music/{});\n".format(ls[0]))
             # self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
             # "border-image: url(./music/{});\n".format(ls[0]))
-            if self.turn_fengmian:
-                self.img=self.init_cv_circle("./music/{}".format(ls[0]))
-                self.imgname=ls[0]
-            else:
-                self.ui.label_12.setStyleSheet("border-radius:80px;\n"
+            
+            self.img=self.init_cv_circle("./music/{}".format(ls[0]))
+            
+            
+            self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
 "border-image: url(./music/{});\n".format(ls[0]))
 
         else:
+        #     self.ui.pushButton.setIcon(QIcon(":/image/image/5.jpg"))
+        #     # self.ui.pushButton_8.setIcon(QIcon(":/image/image/5.jpg"))
+            self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
+                "border-image: url(:/image/image/5.jpg);\n"
+            )
             self.ui.pushButton.setStyleSheet("border-radius:40px;\n"
-"border-image: url(:/image/image/5.jpg);\n")
-            # self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
-            # "border-image: url(:/image/image/5.jpg);\n")
-            if self.turn_fengmian:
-                self.img=self.init_cv_circle("./image/5.jpg")
-                self.imgname="5.jpg"
-            else:
-                self.ui.label_12.setStyleSheet("border-radius:80px;\n"
-"border-image: url(./image/5.jpg);\n")
+            "border-image: url(:/image/image/5.jpg);\n"
+            )
+            # img=QPixmap(":/image/image/5.jpg")
+            self.img=self.qtpixmap_to_cvimg(QPixmap(":/image/image/5.jpg"))
+            # self.img=self.init_cv_circle("./image/5.jpg")
+            
 
 
         #初始化封面
-        if self.turn_fengmian:
-            self.slotRotate()
+        
+        self.slotRotate()
 
         self.show_lrc=True
         #初始化歌词显示
@@ -370,6 +370,8 @@ class Window(QMainWindow):
             self.ui.label_8.setText("未找到该歌曲的歌词")
         else:
             self.get_lrc()
+            #初始化1秒的时候的歌词，肉眼上歌词加载快了点
+            self.get_lrc_by_time(1000)
 
             
 
@@ -461,9 +463,11 @@ class Window(QMainWindow):
         time_list.sort(reverse=True)
         return time_list,lrc_dict
     def get_lrc_by_time(self,time):
-        
+        if self.time_list==[]:
+            self.ui.label_8.setText("未找到该歌曲的歌词")
+            return
         for i,j in enumerate(self.time_list):
-
+            
             if j <= time :
                 # print(self.lrc_dict[i])
                 try:
@@ -491,14 +495,21 @@ class Window(QMainWindow):
         
     def r_fengmian(self):
         self.slotRotate()
-        
+    
+    def fengmian(self):
+        if self.turn_fengmian:
+            self.turn_fengmian=False
+        else:
+            self.turn_fengmian=True
     
     def slotRotate(self):
+        if self.turn_fengmian==False:
+            return
         # image=self.cvimg_to_qtimg(self.img)
         # transform = QTransform()##需要用到pyqt5中QTransform函数
         # transform.rotate(90) ##设置旋转角度——顺时针旋转90°
         # self.image=image.transformed(transform)##对image进行旋转
-        # self.ui.label_12.setPixmap(QPixmap(self.image))
+        # self.ui.pushButton_8.setPixmap(QPixmap(self.image))
         rows, cols = self.img.shape[:2]
         c=cols/2
         r=rows/2
@@ -507,33 +518,24 @@ class Window(QMainWindow):
         #参数：原始图像 旋转参数 元素图像宽高
         rotated = cv2.warpAffine(self.img, M, (cols, rows))
         cv2.imwrite("./music/test.jpg",rotated)
-        self.ui.label_12.setStyleSheet("border-radius:80px;\n"
+        self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
             "border-image: url(./music/test.jpg);\n")
-        # os.remove("test.jpg")
-        # image=self.cvimg_to_qtimg(rotated)
-        # self.ui.label_12.setPixmap(QPixmap(image))
         self.rotate-=5
 
-    def cvimg_to_qtimg(self,cvimg):
-
-        height, width, depth = cvimg.shape
-        cvimg = cv2.cvtColor(cvimg, cv2.COLOR_BGR2RGB)
-        cvimg = QImage(cvimg.data, width, height, width * depth, QImage.Format_RGB888)
-
-        return cvimg
 
     def init_cv_circle(self,img):
         image =cv2.imdecode(np.fromfile(img,dtype=np.uint8),-1)
-        # cv2.imshow('image', image)
-        rows, cols = image.shape[:2]
-        roi = np.zeros(image.shape[:2], np.uint8)
-        r=rows/2
-        c=cols/2
-        roi = cv2.circle(roi, (int(r), int(c)), int(c), 255, cv2.FILLED)
-        # Target image; white background
-        mask = np.ones_like(image) * 255
-        mask = cv2.bitwise_and(mask, image, mask=roi) + cv2.bitwise_and(mask, mask, mask=~roi)
-        return mask
+        return image
+
+    def qtpixmap_to_cvimg(self,qtpixmap):
+        qimg = qtpixmap.toImage()
+        temp_shape = (qimg.height(), qimg.bytesPerLine() * 8 // qimg.depth())
+        temp_shape += (4,)
+        ptr = qimg.bits()
+        ptr.setsize(qimg.byteCount())
+        result = np.array(ptr, dtype=np.uint8).reshape(temp_shape)
+        result = result[..., :3]
+        return result
 
     #窗体拖动
     def mousePressEvent(self, evt):

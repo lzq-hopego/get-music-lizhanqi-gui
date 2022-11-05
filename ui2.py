@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'e:\test2\ui2.ui'
+# Form implementation generated from reading ui file 'e:\music\ui2.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -227,19 +227,21 @@ class Ui_MainWindow(object):
         self.label_11.setText("")
         self.label_11.setObjectName("label_11")
         self.verticalLayout_5.addWidget(self.label_11)
-        self.label_12 = QtWidgets.QLabel(self.frame_15)
-        self.label_12.setGeometry(QtCore.QRect(70, 50, 160, 160))
-        self.label_12.setStyleSheet("border-image: url(:/image/image/5.jpg);\n"
-"border-radius:80px;")
-        self.label_12.setText("")
-        self.label_12.setTextFormat(QtCore.Qt.AutoText)
-        self.label_12.setScaledContents(True)
-        self.label_12.setObjectName("label_12")
         self.listWidget_2 = QtWidgets.QListWidget(self.frame_15)
+        self.listWidget_2.setEnabled(True)
         self.listWidget_2.setGeometry(QtCore.QRect(10, 10, 691, 501))
         self.listWidget_2.setStyleSheet("border-radius:20px;\n"
 "font: 12pt \"幼圆\";")
         self.listWidget_2.setObjectName("listWidget_2")
+        self.pushButton_8 = QtWidgets.QPushButton(self.frame_15)
+        self.pushButton_8.setGeometry(QtCore.QRect(20, 20, 160, 160))
+        self.pushButton_8.setStyleSheet("border-image: url(:/image/image/5.jpg);\n"
+"border-radius:80px;")
+        self.pushButton_8.setText("")
+        self.pushButton_8.setObjectName("pushButton_8")
+        self.frame_20.raise_()
+        self.pushButton_8.raise_()
+        self.listWidget_2.raise_()
         self.horizontalLayout_8.addWidget(self.frame_15)
         self.frame_16 = QtWidgets.QFrame(self.frame_4)
         self.frame_16.setStyleSheet("background-color: rgb(203, 255, 194);")
@@ -279,7 +281,7 @@ class Ui_MainWindow(object):
         self.pushButton.setMinimumSize(QtCore.QSize(80, 80))
         self.pushButton.setMaximumSize(QtCore.QSize(80, 80))
         self.pushButton.setStyleSheet("border-radius:40px;\n"
-"border-image: url(:/image/image/星光派对-赵希予-封面.jpg);\n"
+"border-image: url(:/image/image/5.jpg);\n"
 "")
         self.pushButton.setText("")
         self.pushButton.setObjectName("pushButton")
@@ -503,8 +505,8 @@ class Ui_MainWindow(object):
         self.comboBox.setItemText(7, _translate("MainWindow", "51翻唱"))
         self.comboBox.setItemText(8, _translate("MainWindow", "一听音乐"))
         self.pushButton_6.setText(_translate("MainWindow", "搜索"))
-        self.label.setText(_translate("MainWindow", "星光派对"))
-        self.label_2.setText(_translate("MainWindow", "赵希予"))
+        self.label.setText(_translate("MainWindow", "歌曲名字"))
+        self.label_2.setText(_translate("MainWindow", "歌手"))
         self.label_3.setText(_translate("MainWindow", "00:00"))
         self.label_4.setText(_translate("MainWindow", "00:00"))
 import image_rc
