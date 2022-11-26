@@ -8,6 +8,7 @@ import re
 import cv2
 from get_music import *
 import numpy as np
+from threading import Thread, Lock
 
 class Window(QMainWindow):
     def __init__(self, parent=None, *args, **kwargs):
@@ -44,6 +45,7 @@ class Window(QMainWindow):
         self.mixer.setPlaylist(self.playlist) #加入歌单
         self.songtitle()#初始化左下角显示歌曲名
         self.init_list()#初始化列表
+        self.lock=Lock() #线程锁
 
         self.soupage=False
         self.rotate=0 #记录封面旋转的角度
@@ -57,9 +59,11 @@ class Window(QMainWindow):
         self.ui.listWidget_2.setVisible(False)#初始化listwidget2为不显示状态
         # #初始化歌词显示
         self.init_lrc()
+        
 
         self.ui.horizontalSlider_2.valueChanged.connect(self.setvolume)
-        self.ui.horizontalSlider.sliderReleased.connect(self.getvalue)
+        self.ui.horizontalSlider.valueChanged.connect(self.upgrade_value)
+        self.ui.horizontalSlider.sliderReleased.connect(self.setvalue)
         self.ui.pushButton_2.clicked.connect(self.previous)
         self.ui.pushButton_3.clicked.connect(self.dianji)
         self.ui.pushButton.clicked.connect(self.dianji)
@@ -144,13 +148,30 @@ class Window(QMainWindow):
                 self.ui.listWidget_2.addItem("接口失效,可以联系管理员进行修复，QQ邮箱：310197835@qq.com")
         self.ui.listWidget_2.setVisible(True)
         self.soupage=True
+    
     def list_download(self):
+        t=Thread(target=self.download)
+        t.start()
+        t.join()  
+        #自动播放需要等到线程结束后再做，因为线程中直接自动播放会无法正常加载歌词和封面
+        if self.state=="stop":
+                self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(self.songnamelist[-1]))))
+                self.playlist.setCurrentIndex(len(self.songnamelist)-1)
+                self.dianji()
+
+    def download(self):
+        self.lock.acquire()
+
         num=self.ui.listWidget_2.currentRow()
         songname=self.song_name_list[num]
         singer=self.singer_name_list[num]
         name=songname+"-"+singer
         id=self.song_id_list[num]
-        url=self.is_api.get_music_url(id)
+        try:
+            url=self.is_api.get_music_url(id)
+        except:
+            print("无法解析下载链接，无法下载")
+            return
         # print(url)
         img_url=self.is_api.get_music_pic(num,return_url=True)
         lrc_url=self.is_api.get_music_lrc(num,return_url=True)
@@ -167,7 +188,7 @@ class Window(QMainWindow):
             download.download(img_url,"./music/"+name+".jpg",or_re=False)
         except:
             if 'http' in img_url :
-                html=requests.get(img_url)
+                html=requests.get(img_url,timeout=1)
                 with open("./music/"+name+".jpg",'wb') as f:
                     f.write(html.content)
             else:
@@ -187,11 +208,11 @@ class Window(QMainWindow):
         #有的歌曲可能无法下载其封面，有的无法下载其歌词，有的甚至都不能下载
         if down:
             self.ui.listWidget.addItem(name+".mp3")
-            self.playlist.addMedia(QMediaContent(QUrl("./music/{}.mp3".format(name))))
+            # self.playlist.addMedia(QMediaContent(QUrl("./music/{}.mp3".format(name))))
             self.songnamelist.append(name+".mp3")
-            self.playlist.setCurrentIndex(len(self.songnamelist)-1)
-            if self.state=="stop":
-                self.dianji()
+            # self.playlist.setCurrentIndex(len(self.songnamelist)-1)
+            
+        self.lock.release()
 
     def init_list(self):
         self.ui.listWidget.addItems(self.songnamelist)
@@ -252,7 +273,6 @@ class Window(QMainWindow):
         self.ui.label_4.setText(str(int(time_long / 1000) // 60).zfill(2) + ':' + str(int(time_long / 1000) % 60).zfill(2))
     # 获取当前播放进度
     def this_songtime(self,index):
-        # print(index)
         self.init_songtime()
         time_long=self.mixer.position()
         self.ui.horizontalSlider.setValue(time_long)
@@ -261,9 +281,14 @@ class Window(QMainWindow):
         if self.show_lrc==True:
             self.get_lrc_by_time(index)
     #滑动滑块调整歌曲进度
-    def getvalue(self):
+    def setvalue(self):
         value=self.ui.horizontalSlider.value()
         self.mixer.setPosition(value)
+
+    #拖动滑块，更新播放显示的时间
+    def upgrade_value(self,value):
+        self.ui.label_3.setText(str(int(value / 1000) // 60).zfill(2) + ':' + str(int(value / 1000) % 60).zfill(2))
+
     # 初始化音量进度条及图标
     def init_volume(self):
         num=self.mixer.volume()
