@@ -9,6 +9,7 @@ import cv2
 from get_music import *
 import numpy as np
 from threading import Thread, Lock
+import requests
 
 class Window(QMainWindow):
     def __init__(self, parent=None, *args, **kwargs):
@@ -40,6 +41,7 @@ class Window(QMainWindow):
             self.songnamelist.append('使用说明-开发者.mp3')
             self.playlist.addMedia(QMediaContent(QUrl("./使用说明-开发者.mp3")))
         self.songnum=0  # 用于控制当前播放的是哪一首音乐
+        self.uptime=True
         self.state="stop" #定义播放器当前状态
         self.playlist.setCurrentIndex(self.songnum)
         self.mixer.setPlaylist(self.playlist) #加入歌单
@@ -62,7 +64,8 @@ class Window(QMainWindow):
         
 
         self.ui.horizontalSlider_2.valueChanged.connect(self.setvolume)
-        self.ui.horizontalSlider.valueChanged.connect(self.upgrade_value)
+        self.ui.horizontalSlider.sliderMoved.connect(self.upgrade_value)  
+        # self.ui.horizontalSlider.sliderReleased.connect(self.upgrade_value)
         self.ui.horizontalSlider.sliderReleased.connect(self.setvalue)
         self.ui.pushButton_2.clicked.connect(self.previous)
         self.ui.pushButton_3.clicked.connect(self.dianji)
@@ -150,69 +153,110 @@ class Window(QMainWindow):
         self.soupage=True
     
     def list_download(self):
-        t=Thread(target=self.download)
-        t.start()
-        t.join()  
-        #自动播放需要等到线程结束后再做，因为线程中直接自动播放会无法正常加载歌词和封面
-        if self.state=="stop":
-                self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(self.songnamelist[-1]))))
-                self.playlist.setCurrentIndex(len(self.songnamelist)-1)
-                self.dianji()
-
-    def download(self):
-        self.lock.acquire()
-
         num=self.ui.listWidget_2.currentRow()
         songname=self.song_name_list[num]
         singer=self.singer_name_list[num]
         name=songname+"-"+singer
         id=self.song_id_list[num]
+
         try:
             url=self.is_api.get_music_url(id)
         except:
             print("无法解析下载链接，无法下载")
             return
-        # print(url)
+
+        
         img_url=self.is_api.get_music_pic(num,return_url=True)
         lrc_url=self.is_api.get_music_lrc(num,return_url=True)
-        
 
         rstr = r"[\/\\\:\*\?\"\<\>\|\&]"  # '/ \ : * ? " < > |'
         name = re.sub(rstr, "_", name)  # 替换为下划线
-        try:
-            download.download(url,"./music/"+name+".mp3",or_re=False)
-            down=True
-        except:
-            down=False
-        try:
-            download.download(img_url,"./music/"+name+".jpg",or_re=False)
-        except:
-            if 'http' in img_url :
-                html=requests.get(img_url,timeout=1)
-                with open("./music/"+name+".jpg",'wb') as f:
-                    f.write(html.content)
-            else:
-                print("无法下载该歌曲的封面")
-        try:
-            if "http" in lrc_url:
+
+        self.my_thread1 = mythread("./music/"+name+".jpg",img_url)
+        self.my_thread1.start()
+
+        self.my_thread = mythread("./music/"+name+".mp3",url)
+        self.my_thread.mysignal.connect(self.addmusic)
+        self.my_thread.start()
+
+        
+
+        if "http" in lrc_url:
                 download.download(lrc_url,"./music/"+name+".lrc",or_re=False)
-            else:
-                try:
-                    with open("./music/"+name+".txt",'w') as f:
-                        f.write(lrc_url)
-                except:
-                    with open("./music/"+name+".txt",'w',encoding="utf-8") as f:
-                        f.write(lrc_url)
-        except:
-            print("无法下载该歌曲的歌词")
-        #有的歌曲可能无法下载其封面，有的无法下载其歌词，有的甚至都不能下载
-        if down:
-            self.ui.listWidget.addItem(name+".mp3")
-            # self.playlist.addMedia(QMediaContent(QUrl("./music/{}.mp3".format(name))))
-            self.songnamelist.append(name+".mp3")
-            # self.playlist.setCurrentIndex(len(self.songnamelist)-1)
-            
-        self.lock.release()
+        else:
+            try:
+                with open("./music/"+name+".txt",'w') as f:
+                    f.write(lrc_url)
+            except:
+                with open("./music/"+name+".txt",'w',encoding="utf-8") as f:
+                    f.write(lrc_url)
+
+# #自动播放需要等到线程结束后再做，因为线程中直接自动播放会无法正常加载歌词和封面
+    def addmusic(self,text):
+        print(text)
+        self.ui.listWidget.addItem(text[0]+".mp3")
+        self.songnamelist.append(text[0]+".mp3")
+        if self.state=="stop":
+                    self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(self.songnamelist[-1]))))
+                    self.playlist.setCurrentIndex(len(self.songnamelist)-1)
+                    self.dianji()
+        else:
+            self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(self.songnamelist[-1]))))
+            self.playlist.setCurrentIndex(len(self.songnamelist)-1)
+
+    #由于效率太低不做使用
+    # def download(self):
+    #     num=self.ui.listWidget_2.currentRow()
+    #     songname=self.song_name_list[num]
+    #     singer=self.singer_name_list[num]
+    #     name=songname+"-"+singer
+    #     id=self.song_id_list[num]
+    #     try:
+    #         url=self.is_api.get_music_url(id)
+    #     except:
+    #         print("无法解析下载链接，无法下载")
+    #         return
+    #     # print(url)
+    #     img_url=self.is_api.get_music_pic(num,return_url=True)
+    #     lrc_url=self.is_api.get_music_lrc(num,return_url=True)
+        
+
+    #     rstr = r"[\/\\\:\*\?\"\<\>\|\&]"  # '/ \ : * ? " < > |'
+    #     name = re.sub(rstr, "_", name)  # 替换为下划线
+    #     try:
+    #         download.download(url,"./music/"+name+".mp3",or_re=False)
+    #         down=True
+    #     except:
+    #         down=False
+    #     try:
+    #         download.download(img_url,"./music/"+name+".jpg",or_re=False)
+    #     except:
+    #         if 'http' in img_url :
+    #             html=requests.get(img_url,timeout=1)
+    #             with open("./music/"+name+".jpg",'wb') as f:
+    #                 f.write(html.content)
+    #         else:
+    #             print("无法下载该歌曲的封面")
+    #     try:
+    #         if "http" in lrc_url:
+    #             download.download(lrc_url,"./music/"+name+".lrc",or_re=False)
+    #         else:
+    #             try:
+    #                 with open("./music/"+name+".txt",'w') as f:
+    #                     f.write(lrc_url)
+    #             except:
+    #                 with open("./music/"+name+".txt",'w',encoding="utf-8") as f:
+    #                     f.write(lrc_url)
+    #     except:
+    #         print("无法下载该歌曲的歌词")
+    #     #有的歌曲可能无法下载其封面，有的无法下载其歌词，有的甚至都不能下载
+    #     if down:
+    #         self.ui.listWidget.addItem(name+".mp3")
+    #         # self.playlist.addMedia(QMediaContent(QUrl("./music/{}.mp3".format(name))))
+    #         self.songnamelist.append(name+".mp3")
+    #         # self.playlist.setCurrentIndex(len(self.songnamelist)-1)
+        
+        
 
     def init_list(self):
         self.ui.listWidget.addItems(self.songnamelist)
@@ -273,10 +317,11 @@ class Window(QMainWindow):
         self.ui.label_4.setText(str(int(time_long / 1000) // 60).zfill(2) + ':' + str(int(time_long / 1000) % 60).zfill(2))
     # 获取当前播放进度
     def this_songtime(self,index):
-        self.init_songtime()
-        time_long=self.mixer.position()
-        self.ui.horizontalSlider.setValue(time_long)
-        self.ui.label_3.setText(str(int(time_long / 1000) // 60).zfill(2) + ':' + str(int(time_long / 1000) % 60).zfill(2))
+        if self.uptime:
+            self.init_songtime()
+            time_long=self.mixer.position()
+            self.ui.horizontalSlider.setValue(time_long)
+            self.ui.label_3.setText(str(int(time_long / 1000) // 60).zfill(2) + ':' + str(int(time_long / 1000) % 60).zfill(2))
         #刷新歌词
         if self.show_lrc==True:
             self.get_lrc_by_time(index)
@@ -284,11 +329,13 @@ class Window(QMainWindow):
     def setvalue(self):
         value=self.ui.horizontalSlider.value()
         self.mixer.setPosition(value)
+        self.uptime=True
 
     #拖动滑块，更新播放显示的时间
     def upgrade_value(self,value):
+        self.uptime=False
         self.ui.label_3.setText(str(int(value / 1000) // 60).zfill(2) + ':' + str(int(value / 1000) % 60).zfill(2))
-
+        
     # 初始化音量进度条及图标
     def init_volume(self):
         num=self.mixer.volume()
@@ -581,6 +628,27 @@ class Window(QMainWindow):
             vector_x = self.window_x + move_x
             vector_y = self.window_y + move_y
             self.move(vector_x, vector_y)
+
+class mythread(QThread):  # 步骤1.创建一个线程实例
+    mysignal = pyqtSignal(tuple)  # 创建一个自定义信号，元组参数
+
+    def __init__(self, name,url):  #通过初始化赋值的方式实现UI主线程传递值给子线程
+        super(mythread, self).__init__()
+        self.name = name
+        self.url=url
+        self.mutex = QMutex()
+
+    def run(self):
+        if "http" in self.url:
+            self.mutex.lock()
+            print(self.name,self.url)
+            download.download(self.url,self.name,or_re=False)
+            text=self.name.split("music/")[-1].split(".")[0]
+            self.mysignal.emit((text,1))
+            self.mutex.unlock()
+        
+        # print(self.name,self.url)
+        # self.mysignal.emit(self.a)  # 发射自定义信号
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
