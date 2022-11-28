@@ -1,6 +1,6 @@
 # get-music-lizhanqi-gui
 - 使用get-music-lizhanqi为后端制作的音乐播放下载一体的qt程序
-- 如果你觉得源代码运行起来太麻烦，你可以[点击我](https://www.123pan.com/s/SivKVv-dY8JH)下载打包好的可执行文件
+- 如果你觉得源代码运行起来太麻烦，你可以下载打包好的可执行文件:[123pan](https://www.123pan.com/s/SivKVv-dY8JH)
 
 ## 第一次使用时
 - 由于没有创建music文件夹或music文件夹为空，都会进入引导，引导界面不要直接点击播放，要再下载完歌曲之后再播放
