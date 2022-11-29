@@ -9,7 +9,7 @@ import cv2
 from get_music import *
 import numpy as np
 from threading import Thread, Lock
-import requests
+
 
 class Window(QMainWindow):
     def __init__(self, parent=None, *args, **kwargs):
@@ -41,15 +41,15 @@ class Window(QMainWindow):
             self.songnamelist.append('使用说明-开发者.mp3')
             self.playlist.addMedia(QMediaContent(QUrl("./使用说明-开发者.mp3")))
         self.songnum=0  # 用于控制当前播放的是哪一首音乐
-        self.uptime=True
+        self.uptime=True #是否可以更新播放进度条，当用户拖动进度条时，不更新进度条，否则会造成当前播放进度显示出错
         self.state="stop" #定义播放器当前状态
         self.playlist.setCurrentIndex(self.songnum)
         self.mixer.setPlaylist(self.playlist) #加入歌单
         self.songtitle()#初始化左下角显示歌曲名
         self.init_list()#初始化列表
-        self.lock=Lock() #线程锁
 
-        self.soupage=False
+
+        self.soupage=False #用于搜索结果和歌词界面切换
         self.rotate=0 #记录封面旋转的角度
         
         #封面是否旋转
@@ -139,10 +139,23 @@ class Window(QMainWindow):
             print("没有输入内容")
             return
         self.ui.listWidget_2.clear()
+
+        self.my_thread = search_thread(text,self.is_api)
+        self.my_thread.mysignal.connect(self.search_print)
+        self.my_thread.start()
+        self.ui.listWidget_2.addItem("正在搜索中....")
+        
+        
+    def search_print(self,song):
+        song_name_list=song[0]
+        singer_name_list=song[1]
+        song_id_list=song[-1]
+        self.song_name_list,self.singer_name_list,self.song_id_list=song_name_list,singer_name_list,song_id_list
+        self.ui.listWidget_2.clear()
         try:
-            self.song_name_list,self.singer_name_list,self.song_id_list=self.is_api.search(text)
-            for i in range(min(len(self.song_name_list),len(self.singer_name_list))):
-                name=self.song_name_list[i]+"\t"+self.singer_name_list[i]
+            
+            for i in range(min(len(song_name_list),len(singer_name_list))):
+                name=song_name_list[i]+"\t"+singer_name_list[i]
                 self.ui.listWidget_2.addItem(name)
         except:
             if self.song_name_list=='':
@@ -151,7 +164,8 @@ class Window(QMainWindow):
                 self.ui.listWidget_2.addItem("接口失效,可以联系管理员进行修复，QQ邮箱：310197835@qq.com")
         self.ui.listWidget_2.setVisible(True)
         self.soupage=True
-    
+
+
     def list_download(self):
         num=self.ui.listWidget_2.currentRow()
         songname=self.song_name_list[num]
@@ -199,10 +213,12 @@ class Window(QMainWindow):
         if self.state=="stop":
                     self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(self.songnamelist[-1]))))
                     self.playlist.setCurrentIndex(len(self.songnamelist)-1)
+                    
                     self.dianji()
         else:
             self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(self.songnamelist[-1]))))
             self.playlist.setCurrentIndex(len(self.songnamelist)-1)
+        # print(len(self.songnamelist)-1)
 
     #由于效率太低不做使用
     # def download(self):
@@ -265,6 +281,7 @@ class Window(QMainWindow):
         # print(index)
         num=self.ui.listWidget.currentRow()
         self.playlist.setCurrentIndex(num)
+        # print(num)
         if self.state=="stop":
             self.dianji()
         # self.state="start"
@@ -628,7 +645,7 @@ class Window(QMainWindow):
             vector_x = self.window_x + move_x
             vector_y = self.window_y + move_y
             self.move(vector_x, vector_y)
-
+#下载歌曲封面子线程
 class mythread(QThread):  # 步骤1.创建一个线程实例
     mysignal = pyqtSignal(tuple)  # 创建一个自定义信号，元组参数
 
@@ -641,18 +658,34 @@ class mythread(QThread):  # 步骤1.创建一个线程实例
     def run(self):
         if "http" in self.url:
             self.mutex.lock()
-            print(self.name,self.url)
+            # print(self.name,self.url)
             download.download(self.url,self.name,or_re=False)
             text=self.name.split("music/")[-1].split(".")[0]
             self.mysignal.emit((text,1))
             self.mutex.unlock()
-        
-        # print(self.name,self.url)
-        # self.mysignal.emit(self.a)  # 发射自定义信号
+#搜索歌曲子线程
+class search_thread(QThread):  
+    mysignal = pyqtSignal(tuple)  # 创建一个自定义信号，元组参数
+
+    def __init__(self, name,api):  #通过初始化赋值的方式实现UI主线程传递值给子线程
+        super(search_thread, self).__init__()
+        self.name = name
+        self.api=api
+        self.mutex = QMutex()
+
+    def run(self):
+        self.mutex.lock()
+        try:
+            name,singer,id=self.api.search(self.name)
+            self.mysignal.emit((name,singer,id))
+        except:
+            self.mysignal.emit(("搜索失败","无返回结果",""))
+        self.mutex.unlock()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
+    
     window = Window()
 
     window.show()
