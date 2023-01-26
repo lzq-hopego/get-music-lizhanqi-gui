@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <author>lzq-hopego</author>
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
   <property name="enabled">
@@ -15,6 +16,10 @@
   </property>
   <property name="windowTitle">
    <string>音乐播放器</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="image.qrc">
+    <normaloff>:/image/image/5.jpg</normaloff>:/image/image/5.jpg</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QWidget" name="widget" native="true">
@@ -970,20 +975,25 @@ color:rgb(255,255,255);
                  <item>
                   <widget class="QSlider" name="horizontalSlider">
                    <property name="styleSheet">
-                    <string notr="true">QSlider::groove:horizontal{
-border:1px solid rgb(129,129,129);
-height:8px;
-backgroud:rgb(56,56,63);
+                    <string notr="true">QSlider#horizontalSlider::groove:horizontal{
+height:10px;
+left:2px;
+right:2px;
+margin:0px;
+background:#ffffff;
 }
-QSlider::handle:horizontal{
-backgroud:rgb(85,255,255);
-width:4px;
+QSlider#horizontalSlider::handle:horizontal{
+width:10px;
+height:10px;
+margin:-2 0px;
+background:#66d2ff;
+border:1px solid #ddd;
+border-radius:5px;
 }
-QSlider::add-page:horizontal{
-background:rgb(56,56,63);
-}
-QSlider::sub-page:horizontal{
-background(85,255,255);
+QSlider#horizontalSlider::sub-page:horizontal{
+background:qlineargradient(spread:pad, x1:0,y1:1, x2:1,y2:1, 
+stop:0 rgba(231,80,229,255),
+stop:1 rgba(7,208,255,255))
 }</string>
                    </property>
                    <property name="orientation">
@@ -1088,20 +1098,25 @@ background(85,255,255);
                  </size>
                 </property>
                 <property name="styleSheet">
-                 <string notr="true">QSlider::groove:horizontal{
-border:1px solid rgb(129,129,129);
+                 <string notr="true">QSlider#horizontalSlider_2::groove:horizontal{
+height:8px;
+left:2px;
+right:2px;
+margin:0px;
+background:#ffffff;
+}
+QSlider#horizontalSlider_2::handle:horizontal{
+width:6px;
 height:6px;
-backgroud:rgb(56,56,63);
+margin:-2 0px;
+background:#66d2ff;
+border:1px solid #ddd;
+border-radius:3px;
 }
-QSlider::handle:horizontal{
-backgroud:rgb(85,255,255);
-width:4px;
-}
-QSlider::add-page:horizontal{
-background:rgb(56,56,63);
-}
-QSlider::sub-page:horizontal{
-background(85,255,255);
+QSlider#horizontalSlider_2::sub-page:horizontal{
+background:qlineargradient(spread:pad, x1:0,y1:1, x2:1,y2:1, 
+stop:0 rgba(231,80,229,255),
+stop:1 rgba(7,208,255,255))
 }</string>
                 </property>
                 <property name="orientation">
