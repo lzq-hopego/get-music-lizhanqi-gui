@@ -1,14 +1,12 @@
 from PyQt5.Qt import *
 from PyQt5.QtCore import QTimer, QUrl
 from PyQt5.QtMultimedia import QMediaPlayer,QMediaPlaylist, QMediaContent
-from PyQt5.QtWidgets import QFileDialog
 import sys,os
 from ui2 import Ui_MainWindow
 import re
 import cv2
 from get_music import *
 import numpy as np
-from threading import Thread, Lock
 
 
 class Window(QMainWindow):
@@ -220,58 +218,6 @@ class Window(QMainWindow):
             self.playlist.setCurrentIndex(len(self.songnamelist)-1)
         # print(len(self.songnamelist)-1)
 
-    #由于效率太低不做使用
-    # def download(self):
-    #     num=self.ui.listWidget_2.currentRow()
-    #     songname=self.song_name_list[num]
-    #     singer=self.singer_name_list[num]
-    #     name=songname+"-"+singer
-    #     id=self.song_id_list[num]
-    #     try:
-    #         url=self.is_api.get_music_url(id)
-    #     except:
-    #         print("无法解析下载链接，无法下载")
-    #         return
-    #     # print(url)
-    #     img_url=self.is_api.get_music_pic(num,return_url=True)
-    #     lrc_url=self.is_api.get_music_lrc(num,return_url=True)
-        
-
-    #     rstr = r"[\/\\\:\*\?\"\<\>\|\&]"  # '/ \ : * ? " < > |'
-    #     name = re.sub(rstr, "_", name)  # 替换为下划线
-    #     try:
-    #         download.download(url,"./music/"+name+".mp3",or_re=False)
-    #         down=True
-    #     except:
-    #         down=False
-    #     try:
-    #         download.download(img_url,"./music/"+name+".jpg",or_re=False)
-    #     except:
-    #         if 'http' in img_url :
-    #             html=requests.get(img_url,timeout=1)
-    #             with open("./music/"+name+".jpg",'wb') as f:
-    #                 f.write(html.content)
-    #         else:
-    #             print("无法下载该歌曲的封面")
-    #     try:
-    #         if "http" in lrc_url:
-    #             download.download(lrc_url,"./music/"+name+".lrc",or_re=False)
-    #         else:
-    #             try:
-    #                 with open("./music/"+name+".txt",'w') as f:
-    #                     f.write(lrc_url)
-    #             except:
-    #                 with open("./music/"+name+".txt",'w',encoding="utf-8") as f:
-    #                     f.write(lrc_url)
-    #     except:
-    #         print("无法下载该歌曲的歌词")
-    #     #有的歌曲可能无法下载其封面，有的无法下载其歌词，有的甚至都不能下载
-    #     if down:
-    #         self.ui.listWidget.addItem(name+".mp3")
-    #         # self.playlist.addMedia(QMediaContent(QUrl("./music/{}.mp3".format(name))))
-    #         self.songnamelist.append(name+".mp3")
-    #         # self.playlist.setCurrentIndex(len(self.songnamelist)-1)
-        
         
 
     def init_list(self):
@@ -299,34 +245,47 @@ class Window(QMainWindow):
             self.timer.start(250)
     def next(self):
         if self.playlist.nextIndex()==-1:
-            name=self.songnamelist[self.playlist.nextIndex()+1]
             self.state="stop"
             self.dianji()
             self.dianji()
             
-        print(self.playlist.nextIndex(),self.state)
+        # print(self.playlist.nextIndex(),self.state)
         self.playlist.next()
         self.this_songtime(0)
+        self.rotate=0
         
  
         
     def previous(self):
         if self.playlist.previousIndex()==-1:
-            name=self.songnamelist[self.playlist.previousIndex()+1]
             self.state="stop"
             self.dianji()
             self.dianji()
         
-        print(self.playlist.previousIndex(),self.state)
+        # print(self.playlist.previousIndex(),self.state)
         self.playlist.previous()
         self.this_songtime(0)
-        
+        self.rotate=0
 
     # 获取当前播放歌曲名
     def songtitle(self):
         name=self.songnamelist[self.playlist.currentIndex()]
-        self.ui.label.setText(name.split("-")[0])
-        self.ui.label_2.setText(name.split("-")[-1].split(".")[0])
+        
+
+        #防止因歌曲名字过长导致无法正常显示进度条
+        ls=name.split('-')
+        if len(ls)>2:
+            songname='-'.join(ls[:-1])
+            singer=ls[-1].split('.')[0]
+        else:
+            songname,singer=name.split("-")[0],name.split("-")[-1].split(".")[0]
+        if len(songname)>15:
+            songname=songname[:15]+"..."
+        elif len(singer)>15:
+            singer=singer[:15]+"..."
+
+        self.ui.label.setText(songname)
+        self.ui.label_2.setText(singer)
     # 获取歌曲长度
     def init_songtime(self):
         time_long=self.mixer.duration()
@@ -390,31 +349,32 @@ class Window(QMainWindow):
     #设置播放模式，并修改图标
     def set_play_back_mode(self):
         ls=[self.playlist.CurrentItemInLoop,self.playlist.Loop,self.playlist.Random]
+        mode=["单曲循环","列表循环","随机播放"]
         lt=[QIcon(":/image/image/cycle_one.png"),QIcon(":/image/image/cycle.png"),QIcon(":/image/image/random.png")]
         num=self.playlist.playbackMode()
+        # print(num)
         if num==3:
             s=2
-            print('随机播放')
         elif num==4:
             s=0
-            print("列表循环")
         elif num==1:
             s=1
-            print("单曲循环")
         self.playlist.setPlaybackMode(ls[s])
         self.ui.pushButton_5.setIcon(lt[s])
+        print(mode[s])
     def init_fengmian(self):
         #更新当前播放的歌曲在列表中显示
+        # print(self.self.playlist.currentIndex())
         if len(self.songnamelist)-1<=self.playlist.previousIndex():
             self.ui.listWidget.setCurrentRow(0)
         else:
-            self.ui.listWidget.setCurrentRow(self.playlist.previousIndex()+1)
+            self.ui.listWidget.setCurrentRow(self.playlist.currentIndex())
         #更新标题和歌曲封面
         self.songtitle()
         dirlist=os.listdir('./music')
         ls=[]
         for i in dirlist:
-            if self.songnamelist[self.playlist.currentIndex()].split("-")[0] in i:
+            if self.songnamelist[self.playlist.currentIndex()].split(".")[0] in i:
                 if '.jpg' in i:
                     ls.append(i)
         if len(ls)>=1:
@@ -462,7 +422,6 @@ class Window(QMainWindow):
             #初始化1秒的时候的歌词，肉眼上歌词加载快了点
             self.get_lrc_by_time(1000)
 
-            
 
     def get_lrc(self):
         dirlist=os.listdir('./music')

@@ -16,6 +16,9 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setEnabled(True)
         MainWindow.resize(1258, 807)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/image/image/5.jpg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        MainWindow.setWindowIcon(icon)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.widget = QtWidgets.QWidget(self.centralwidget)
@@ -351,9 +354,9 @@ class Ui_MainWindow(object):
         self.pushButton_3.setMaximumSize(QtCore.QSize(30, 30))
         self.pushButton_3.setStyleSheet("border:none;")
         self.pushButton_3.setText("")
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(":/image/image/播放_play.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.pushButton_3.setIcon(icon)
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(QtGui.QPixmap(":/image/image/播放_play.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.pushButton_3.setIcon(icon1)
         self.pushButton_3.setIconSize(QtCore.QSize(30, 30))
         self.pushButton_3.setObjectName("pushButton_3")
         self.horizontalLayout_4.addWidget(self.pushButton_3)
@@ -389,20 +392,25 @@ class Ui_MainWindow(object):
         self.label_3.setObjectName("label_3")
         self.horizontalLayout_5.addWidget(self.label_3)
         self.horizontalSlider = QtWidgets.QSlider(self.frame_11)
-        self.horizontalSlider.setStyleSheet("QSlider::groove:horizontal{\n"
-"border:1px solid rgb(129,129,129);\n"
-"height:8px;\n"
-"backgroud:rgb(56,56,63);\n"
+        self.horizontalSlider.setStyleSheet("QSlider#horizontalSlider::groove:horizontal{\n"
+"height:10px;\n"
+"left:2px;\n"
+"right:2px;\n"
+"margin:0px;\n"
+"background:#ffffff;\n"
 "}\n"
-"QSlider::handle:horizontal{\n"
-"backgroud:rgb(85,255,255);\n"
-"width:4px;\n"
+"QSlider#horizontalSlider::handle:horizontal{\n"
+"width:10px;\n"
+"height:10px;\n"
+"margin:-2 0px;\n"
+"background:#66d2ff;\n"
+"border:1px solid #ddd;\n"
+"border-radius:5px;\n"
 "}\n"
-"QSlider::add-page:horizontal{\n"
-"background:rgb(56,56,63);\n"
-"}\n"
-"QSlider::sub-page:horizontal{\n"
-"background(85,255,255);\n"
+"QSlider#horizontalSlider::sub-page:horizontal{\n"
+"background:qlineargradient(spread:pad, x1:0,y1:1, x2:1,y2:1, \n"
+"stop:0 rgba(231,80,229,255),\n"
+"stop:1 rgba(7,208,255,255))\n"
 "}")
         self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider.setObjectName("horizontalSlider")
@@ -439,20 +447,25 @@ class Ui_MainWindow(object):
         self.horizontalLayout_6.addWidget(self.pushButton_7)
         self.horizontalSlider_2 = QtWidgets.QSlider(self.frame_8)
         self.horizontalSlider_2.setMaximumSize(QtCore.QSize(100, 30))
-        self.horizontalSlider_2.setStyleSheet("QSlider::groove:horizontal{\n"
-"border:1px solid rgb(129,129,129);\n"
+        self.horizontalSlider_2.setStyleSheet("QSlider#horizontalSlider_2::groove:horizontal{\n"
+"height:8px;\n"
+"left:2px;\n"
+"right:2px;\n"
+"margin:0px;\n"
+"background:#ffffff;\n"
+"}\n"
+"QSlider#horizontalSlider_2::handle:horizontal{\n"
+"width:6px;\n"
 "height:6px;\n"
-"backgroud:rgb(56,56,63);\n"
+"margin:-2 0px;\n"
+"background:#66d2ff;\n"
+"border:1px solid #ddd;\n"
+"border-radius:3px;\n"
 "}\n"
-"QSlider::handle:horizontal{\n"
-"backgroud:rgb(85,255,255);\n"
-"width:4px;\n"
-"}\n"
-"QSlider::add-page:horizontal{\n"
-"background:rgb(56,56,63);\n"
-"}\n"
-"QSlider::sub-page:horizontal{\n"
-"background(85,255,255);\n"
+"QSlider#horizontalSlider_2::sub-page:horizontal{\n"
+"background:qlineargradient(spread:pad, x1:0,y1:1, x2:1,y2:1, \n"
+"stop:0 rgba(231,80,229,255),\n"
+"stop:1 rgba(7,208,255,255))\n"
 "}")
         self.horizontalSlider_2.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider_2.setObjectName("horizontalSlider_2")
@@ -462,9 +475,9 @@ class Ui_MainWindow(object):
         self.pushButton_5.setMaximumSize(QtCore.QSize(30, 30))
         self.pushButton_5.setStyleSheet("border:none;")
         self.pushButton_5.setText("")
-        icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap(":/image/image/cycle.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.pushButton_5.setIcon(icon1)
+        icon2 = QtGui.QIcon()
+        icon2.addPixmap(QtGui.QPixmap(":/image/image/cycle.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.pushButton_5.setIcon(icon2)
         self.pushButton_5.setIconSize(QtCore.QSize(30, 30))
         self.pushButton_5.setObjectName("pushButton_5")
         self.horizontalLayout_6.addWidget(self.pushButton_5)
