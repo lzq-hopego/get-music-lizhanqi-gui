@@ -99,7 +99,6 @@ class Window(QMainWindow):
                 self.dianji()
         def shanchu():
             num=self.ui.listWidget.currentRow()
-            self.playlist.removeMedia(num)
             songname=self.songnamelist[num].split('.')[0]
             self.songnamelist.pop(num)
             self.ui.listWidget.takeItem(num)
@@ -114,6 +113,8 @@ class Window(QMainWindow):
                             print('已删除：'+'./music/'+i)
             else:
                 print('下次刷新将会重新显示！')
+            self.playlist.removeMedia(num)
+            self.init_fengmian()   #有可能删除的是正在播放的歌曲，所以在删除之后刷新一下封面和歌词信息
         def init_gedan():
                 self.playlist.removeMedia(0,len(self.songnamelist)-1)
                 self.ui.listWidget.clear()
