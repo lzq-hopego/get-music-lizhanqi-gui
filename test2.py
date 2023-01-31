@@ -1,12 +1,15 @@
 from PyQt5.Qt import *
-from PyQt5.QtCore import QTimer, QUrl
+from PyQt5.QtCore import QTimer, QUrl,QPoint
 from PyQt5.QtMultimedia import QMediaPlayer,QMediaPlaylist, QMediaContent
+from PyQt5.QtWidgets import QMenu,QAction,QMessageBox
+from PyQt5 import QtGui
 import sys,os
 from ui2 import Ui_MainWindow
 import re
 import cv2
 from get_music import *
 import numpy as np
+import downloader
 
 
 class Window(QMainWindow):
@@ -22,29 +25,9 @@ class Window(QMainWindow):
         self.timer=QTimer()
 
         self.playlist=QMediaPlaylist()
-        if os.path.exists('./music')==False:
-            os.mkdir('./music') 
-        dirlist=os.listdir('./music')
+
+        self.init_gedan()  #初始化歌单
         
-        self.songnamelist=[]
-        for i in dirlist:
-            if '.mp3' in i:
-                self.songnamelist.append(i)
-                self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(i))))
-        if self.songnamelist==[]:
-            with open("./music/使用说明.txt",'w') as f:
-                f.write("[00:00.19]检测到music文件夹为空")
-                f.write("\r\n")
-                f.write("[00:01.11]所以请开始搜索下载吧")
-            self.songnamelist.append('使用说明-开发者.mp3')
-            self.playlist.addMedia(QMediaContent(QUrl("./使用说明-开发者.mp3")))
-        self.songnum=0  # 用于控制当前播放的是哪一首音乐
-        self.uptime=True #是否可以更新播放进度条，当用户拖动进度条时，不更新进度条，否则会造成当前播放进度显示出错
-        self.state="stop" #定义播放器当前状态
-        self.playlist.setCurrentIndex(self.songnum)
-        self.mixer.setPlaylist(self.playlist) #加入歌单
-        self.songtitle()#初始化左下角显示歌曲名
-        self.init_list()#初始化列表
 
 
         self.soupage=False #用于搜索结果和歌词界面切换
@@ -83,6 +66,10 @@ class Window(QMainWindow):
         # self.ui.pushButton_3.clicked.connect(self.dis_one)
         # self.ui.pushButton_7.clicked.connect(self.undis_one)
         # self.ui.widget_4.setVisible(False)
+
+
+        self.ui.listWidget.setContextMenuPolicy(3)
+        self.ui.listWidget.customContextMenuRequested[QPoint].connect(self.rightMenuShow)
         
         #判断是否在播放时旋转封面，注意由于qt的限制我无法实现圆形封面旋转
         #采用的opencv圆形检测后并保存为test.jpg文件后再显示的，非常消耗内存，默认关闭
@@ -104,6 +91,89 @@ class Window(QMainWindow):
         self.singer_name_list=[]
         self.song_id_list=[]
 
+    def rightMenuShow(self):
+        def bofang():
+            num=self.ui.listWidget.currentRow()
+            self.playlist.setCurrentIndex(num)
+            if self.state=="stop":
+                self.dianji()
+        def shanchu():
+            num=self.ui.listWidget.currentRow()
+            self.playlist.removeMedia(num)
+            songname=self.songnamelist[num].split('.')[0]
+            self.songnamelist.pop(num)
+            self.ui.listWidget.takeItem(num)
+            a = QMessageBox.question(self, '删除', '你是否要删除本地文件？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if a==QMessageBox.Yes:
+                dirlist=os.listdir('./music')
+                for i in dirlist:
+                    if i.split('.')[-1] in ['mp3','jpg','lrc','txt']:
+                        # return   #删除保护，不删除其他同名但扩展名不同的文件
+                        if i.split('.')[0]==songname:
+                            os.remove('./music/'+i)
+                            print('已删除：'+'./music/'+i)
+            else:
+                print('下次刷新将会重新显示！')
+        def init_gedan():
+                self.playlist.removeMedia(0,len(self.songnamelist)-1)
+                self.ui.listWidget.clear()
+                if os.path.exists('./music')==False:
+                    os.mkdir('./music') 
+                dirlist=os.listdir('./music')
+                self.songnamelist=[]
+                for i in dirlist:
+                    if '.mp3' in i:
+                        self.songnamelist.append(i)
+                        self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(i))))
+                if self.songnamelist==[]:
+                    with open("./music/使用说明.txt",'w') as f:
+                        f.write("[00:00.19]检测到music文件夹为空")
+                        f.write("\r\n")
+                        f.write("[00:01.11]所以请开始搜索下载吧")
+                    self.songnamelist.append('使用说明-开发者.mp3')
+                    self.playlist.addMedia(QMediaContent(QUrl("./使用说明-开发者.mp3")))
+                self.songnum=0  # 用于控制当前播放的是哪一首音乐
+                self.uptime=True #是否可以更新播放进度条，当用户拖动进度条时，不更新进度条，否则会造成当前播放进度显示出错
+                self.state="stop" #定义播放器当前状态
+                self.playlist.setCurrentIndex(self.songnum)
+                self.mixer.setPlaylist(self.playlist) #加入歌单
+                self.songtitle()#初始化左下角显示歌曲名
+                self.init_list()#初始化列表
+
+
+        menu=QMenu()
+        menu.setStyleSheet("font: 12pt \"幼圆\";\n"
+    "color: rgb(255, 128, 128);")
+
+
+        menu.addAction(QAction(u'播放', self, triggered=bofang))  #播放当前选中的条目 
+        menu.addAction(QAction(u'删除', self, triggered=shanchu))  #删除当前选中的条目
+        menu.addAction(QAction(u'刷新', self, triggered=init_gedan))  #刷新歌单
+        menu.exec_(QtGui.QCursor.pos())
+
+    def init_gedan(self):
+        if os.path.exists('./music')==False:
+            os.mkdir('./music') 
+        dirlist=os.listdir('./music')
+        self.songnamelist=[]
+        for i in dirlist:
+            if '.mp3' in i:
+                self.songnamelist.append(i)
+                self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(i))))
+        if self.songnamelist==[]:
+            with open("./music/使用说明.txt",'w') as f:
+                f.write("[00:00.19]检测到music文件夹为空")
+                f.write("\r\n")
+                f.write("[00:01.11]所以请开始搜索下载吧")
+            self.songnamelist.append('使用说明-开发者.mp3')
+            self.playlist.addMedia(QMediaContent(QUrl("./使用说明-开发者.mp3")))
+        self.songnum=0  # 用于控制当前播放的是哪一首音乐
+        self.uptime=True #是否可以更新播放进度条，当用户拖动进度条时，不更新进度条，否则会造成当前播放进度显示出错
+        self.state="stop" #定义播放器当前状态
+        self.playlist.setCurrentIndex(self.songnum)
+        self.mixer.setPlaylist(self.playlist) #加入歌单
+        self.songtitle()#初始化左下角显示歌曲名
+        self.init_list()#初始化列表
 
     def undis_one(self):
         if self.soupage==False:
@@ -172,7 +242,7 @@ class Window(QMainWindow):
         id=self.song_id_list[num]
 
         try:
-            url=self.is_api.get_music_url(id)
+            self.url=self.is_api.get_music_url(id)
         except:
             print("无法解析下载链接，无法下载")
             return
@@ -182,26 +252,26 @@ class Window(QMainWindow):
         lrc_url=self.is_api.get_music_lrc(num,return_url=True)
 
         rstr = r"[\/\\\:\*\?\"\<\>\|\&]"  # '/ \ : * ? " < > |'
-        name = re.sub(rstr, "_", name)  # 替换为下划线
+        self.name = re.sub(rstr, "_", name)  # 替换为下划线
 
-        self.my_thread1 = mythread("./music/"+name+".jpg",img_url)
+        # print(img_url,self.url)
+        # 使用rich官方给的代码进行下载，是支持同时下载的  命令行    downloader.py url name url2 name2   最大支持4个任务同时下载
+        self.my_thread1 = mythread("./music/"+self.name+".jpg",img_url,"./music/"+self.name+".mp3",self.url)
+        self.my_thread1.mysignal.connect(self.addmusic)
         self.my_thread1.start()
-
-        self.my_thread = mythread("./music/"+name+".mp3",url)
-        self.my_thread.mysignal.connect(self.addmusic)
-        self.my_thread.start()
-
-        
-
-        if "http" in lrc_url:
-                download.download(lrc_url,"./music/"+name+".lrc",or_re=False)
-        else:
-            try:
-                with open("./music/"+name+".txt",'w') as f:
-                    f.write(lrc_url)
-            except:
-                with open("./music/"+name+".txt",'w',encoding="utf-8") as f:
-                    f.write(lrc_url)
+ 
+        try:
+            if "http" in lrc_url:
+                    download.download(lrc_url,"./music/"+name+".lrc",or_re=False)
+            else:
+                try:
+                    with open("./music/"+name+".txt",'w') as f:
+                        f.write(lrc_url)
+                except:
+                    with open("./music/"+name+".txt",'w',encoding="utf-8") as f:
+                        f.write(lrc_url)
+        except:
+            print('无法获取歌词链接')
 
 # #自动播放需要等到线程结束后再做，因为线程中直接自动播放会无法正常加载歌词和封面
     def addmusic(self,text):
@@ -252,7 +322,7 @@ class Window(QMainWindow):
         # print(self.playlist.nextIndex(),self.state)
         self.playlist.next()
         self.this_songtime(0)
-        self.rotate=0
+        
         
  
         
@@ -265,7 +335,7 @@ class Window(QMainWindow):
         # print(self.playlist.previousIndex(),self.state)
         self.playlist.previous()
         self.this_songtime(0)
-        self.rotate=0
+
 
     # 获取当前播放歌曲名
     def songtitle(self):
@@ -273,10 +343,14 @@ class Window(QMainWindow):
         
 
         #防止因歌曲名字过长导致无法正常显示进度条
+
         ls=name.split('-')
         if len(ls)>2:
             songname='-'.join(ls[:-1])
             singer=ls[-1].split('.')[0]
+        elif len(ls)<2:
+            songname=name.split('.')[0]
+            singer='未知歌手'
         else:
             songname,singer=name.split("-")[0],name.split("-")[-1].split(".")[0]
         if len(songname)>15:
@@ -421,7 +495,7 @@ class Window(QMainWindow):
             self.get_lrc()
             #初始化1秒的时候的歌词，肉眼上歌词加载快了点
             self.get_lrc_by_time(1000)
-
+        self.rotate=0  #初始化封面旋转角度
 
     def get_lrc(self):
         dirlist=os.listdir('./music')
@@ -608,17 +682,18 @@ class Window(QMainWindow):
 class mythread(QThread):  # 步骤1.创建一个线程实例
     mysignal = pyqtSignal(tuple)  # 创建一个自定义信号，元组参数
 
-    def __init__(self, name,url):  #通过初始化赋值的方式实现UI主线程传递值给子线程
+    def __init__(self, name,url,name1,url1):  #通过初始化赋值的方式实现UI主线程传递值给子线程
         super(mythread, self).__init__()
         self.name = name
         self.url=url
+        self.name1=name1
+        self.url1=url1
         self.mutex = QMutex()
 
     def run(self):
         if "http" in self.url:
             self.mutex.lock()
-            # print(self.name,self.url)
-            download.download(self.url,self.name,or_re=False)
+            downloader.download([self.url,self.name,self.url1,self.name1])
             text=self.name.split("music/")[-1].split(".")[0]
             self.mysignal.emit((text,1))
             self.mutex.unlock()
