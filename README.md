@@ -8,9 +8,10 @@
 
 ## 下载了一首歌之后
 - 并重启打开后，右侧的使用说明就没了，接下来就可以愉快的享受歌曲的带来的快乐了
-![测试图片](./test_page.jpg)
+![测试图片](./test2.jpg)
 
 如果你想了解[get-music-lizhanqi](https://github.com/lzq-hopego/get-music-lizhanqi)请移步，他也是我的项目，也是这个qt页面的后端
+
 
 ## 使用安装
 
