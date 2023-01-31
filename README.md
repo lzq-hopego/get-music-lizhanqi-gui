@@ -19,7 +19,7 @@ pip安装需要的依赖即可，暂不支持python3.11和python3.7以下的版�
 需要你安装以下第三方库
 ```
 opencv-python
-get-music-lizhanqi==1.0.9 #它的版本要大于1.0.8，否则网易云接口无法下载歌词
+get-music-lizhanqi #它的版本最好下载最新版本
 pyqt5
 ```
 
