@@ -1,7 +1,7 @@
 from PyQt5.Qt import *
 from PyQt5.QtCore import QTimer, QUrl,QPoint
 from PyQt5.QtMultimedia import QMediaPlayer,QMediaPlaylist, QMediaContent
-from PyQt5.QtWidgets import QMenu,QAction,QMessageBox
+from PyQt5.QtWidgets import QMenu,QAction,QMessageBox,QFileDialog
 from PyQt5 import QtGui
 import sys,os
 from ui2 import Ui_MainWindow
@@ -10,6 +10,8 @@ import cv2
 from get_music import *
 import numpy as np
 import downloader
+import pathlib
+import random
 
 
 class Window(QMainWindow):
@@ -20,12 +22,19 @@ class Window(QMainWindow):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
+        # self.ui.widget.setStyleSheet("border-image: url(./18.jpg);\n")
+#         self.ui.widget.setStyleSheet("#widget{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0.00515464 rgba(85, 170, 255, 255), stop:1 rgba(245, 134, 255, 255));\n"
+# "border-radius:22px;\nborder-image: url(./18.jpg);\n}")
         self.switch = False#窗体是否被拖动
         self.mixer=QMediaPlayer()
         self.timer=QTimer()
+        self.timer2=QTimer()
 
         self.playlist=QMediaPlaylist()
 
+
+          
+        # self.init_widget_background()
         self.init_gedan()  #初始化歌单
         
 
@@ -42,6 +51,8 @@ class Window(QMainWindow):
         self.ui.listWidget_2.setVisible(False)#初始化listwidget2为不显示状态
         # #初始化歌词显示
         self.init_lrc()
+
+        self.diy_background=False  #当前是否背景自定义
         
 
         self.ui.horizontalSlider_2.valueChanged.connect(self.setvolume)
@@ -70,11 +81,20 @@ class Window(QMainWindow):
 
         self.ui.listWidget.setContextMenuPolicy(3)
         self.ui.listWidget.customContextMenuRequested[QPoint].connect(self.rightMenuShow)
+
+        self.ui.frame_19.setContextMenuPolicy(3)
+        self.ui.frame_19.customContextMenuRequested[QPoint].connect(self.rightMenuShowFrame)
+
+        self.ui.frame_15.setContextMenuPolicy(3)
+        self.ui.frame_15.customContextMenuRequested[QPoint].connect(self.rightMenuShowFrame)
         
         #判断是否在播放时旋转封面，注意由于qt的限制我无法实现圆形封面旋转
         #采用的opencv圆形检测后并保存为test.jpg文件后再显示的，非常消耗内存，默认关闭
         self.timer.timeout.connect(self.r_fengmian)
-        
+        self.timer2.timeout.connect(self.init_widget_background)
+        # self.timer2.start(10000)
+        # self.un_background()
+
         #初始化搜索引擎
         self.song_name_list=[]
         self.singer_name_list=[]
@@ -90,7 +110,71 @@ class Window(QMainWindow):
         self.song_name_list=[]
         self.singer_name_list=[]
         self.song_id_list=[]
+    def init_img_list(self):
+        directory = QFileDialog.getExistingDirectory(None,"选取文件夹")
+        # path=''
+        dirlist=os.listdir(directory)
+        ls=[]
+        for j in dirlist:
+            if '.jpg' in j:
+                p=pathlib.PureWindowsPath(directory+'\\'+j)
+                r=str(p.as_posix())
+                ls.append(r)
+        self.img_list=ls
+        self.img_num=0
+        self.init_widget_background()
+        self.timer2.start(5000)
 
+    def un_background(self):
+        self.ui.frame_15.setStyleSheet("background-color: transparent;")
+        self.ui.frame_16.setStyleSheet("background-color: transparent;")
+        self.ui.frame_19.setStyleSheet("#frame_19{background-color: transparent;border-bottom-left-radius:20px;}")
+        self.ui.frame_18.setStyleSheet("background-color: transparent;")
+        self.ui.frame_17.setStyleSheet("#frame_17{background-color: transparent;border-top-left-radius:20px;}")
+        self.ui.frame.setStyleSheet("#frame{border-top-left-radius:22px;border-bottom-left-radius:22px;background-color: transparent;}")
+        self.ui.frame_3.setStyleSheet("#frame_3{ border-top-right-radius:22px; background-color: transparent; }")
+        self.ui.frame_13.setStyleSheet("background-color: transparent;")
+        self.ui.frame_12.setStyleSheet("background-color: transparent;")
+        self.ui.frame_14.setStyleSheet("background-color: transparent;border-top-right-radius:20px;")
+
+    def do_background(self):
+        self.ui.frame_15.setStyleSheet("background-color: rgb(255, 144, 179);")
+        self.ui.frame_16.setStyleSheet("background-color: rgb(203, 255, 194);")
+        self.ui.frame_19.setStyleSheet("#frame_19{background-color: rgb(196, 209, 255);border-bottom-left-radius:20px;}")
+        self.ui.frame_18.setStyleSheet("background-color: rgb(250, 176, 255);")
+        self.ui.frame_17.setStyleSheet("#frame_17{background-color: rgb(255, 207, 192);border-top-left-radius:20px;}")
+        self.ui.frame.setStyleSheet("#frame{border-top-left-radius:22px;border-bottom-left-radius:22px;background-color: rgb(255, 170, 0);}")
+        self.ui.frame_3.setStyleSheet("#frame_3{ border-top-right-radius:22px; background-color: rgb(255, 0, 127); }")
+        self.ui.frame_13.setStyleSheet("background-color: rgb(212, 255, 235);")
+        self.ui.frame_12.setStyleSheet("background-color: rgb(255, 210, 254);")
+        self.ui.frame_14.setStyleSheet("background-color: rgb(255, 245, 221);border-top-right-radius:20px;")
+        self.timer2.stop()  #关闭定时器
+        self.diy_background=False
+        self.ui.widget.setStyleSheet("#widget{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0.00515464 rgba(85, 170, 255, 255), stop:1 rgba(245, 134, 255, 255));\n"
+"border-radius:22px;}")
+        # self.init_widget_background()
+    def init_widget_background(self):
+        img_num=random.randint(0,len(self.img_list)-1)
+        if img_num==self.img_num:
+            self.img_num=img_num=random.randint(0,len(self.img_list)-1)
+        else:
+            self.img_num=img_num
+        url=self.img_list[self.img_num]
+
+        self.ui.widget.setStyleSheet("#widget{border-radius:22px;\nborder-image: url("+url+");\n}")
+        self.un_background()
+        self.diy_background=True
+
+    def rightMenuShowFrame(self):
+        #
+        menu=QMenu()
+        menu.setStyleSheet("font: 12pt \"幼圆\";\n"
+    "color: rgb(255, 128, 128);")
+        if self.diy_background:
+            menu.addAction(QAction(u'取消自定义背景', self,triggered=self.do_background)) #取消自定义背景
+        else:
+            menu.addAction(QAction(u'自定义背景', self,triggered=self.init_img_list))  #自定义背景
+        menu.exec_(QtGui.QCursor.pos())
     def rightMenuShow(self):
         def bofang():
             num=self.ui.listWidget.currentRow()
@@ -146,12 +230,11 @@ class Window(QMainWindow):
         menu.setStyleSheet("font: 12pt \"幼圆\";\n"
     "color: rgb(255, 128, 128);")
 
-
         menu.addAction(QAction(u'播放', self, triggered=bofang))  #播放当前选中的条目 
         menu.addAction(QAction(u'删除', self, triggered=shanchu))  #删除当前选中的条目
         menu.addAction(QAction(u'刷新', self, triggered=init_gedan))  #刷新歌单
         menu.exec_(QtGui.QCursor.pos())
-
+    #初始化歌单
     def init_gedan(self):
         if os.path.exists('./music')==False:
             os.mkdir('./music') 
