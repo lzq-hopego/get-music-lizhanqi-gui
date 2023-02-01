@@ -12,6 +12,9 @@
 
 如果你想了解[get-music-lizhanqi](https://github.com/lzq-hopego/get-music-lizhanqi)请移步，他也是我的项目，也是这个qt页面的后端
 
+## 支持自定义壁纸
+- 在左侧右键或大封面下方右键可以唤出菜单，选择自定义壁纸，会让你选择一个文件夹，文件夹中要有.jpg的图片才行，可以放多张，组成5秒切换一次的壁纸轮转
+![示例图](./test_page.jpg)
 
 ## 使用安装
 
