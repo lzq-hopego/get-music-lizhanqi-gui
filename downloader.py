@@ -66,10 +66,14 @@ def download(urls: Iterable[str]):
         with ThreadPoolExecutor(max_workers=4) as pool:
             for i in range(0,len(urls),2):
                 url=urls[i]
-                filename = urls[i+1]
-                dest_path = filename
-                task_id = progress.add_task("download", filename=filename, start=False)
-                pool.submit(copy_url, task_id, url, dest_path)
+                if url=='':
+                    print("无法下载:"+urls[i+1])
+                    continue
+                if 'http' in url:
+                    filename = urls[i+1]
+                    dest_path = filename
+                    task_id = progress.add_task("download", filename=filename, start=False)
+                    pool.submit(copy_url, task_id, url, dest_path)
 
 
 # if __name__ == "__main__":

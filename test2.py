@@ -22,9 +22,8 @@ class Window(QMainWindow):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
 
-        # self.ui.widget.setStyleSheet("border-image: url(./18.jpg);\n")
-#         self.ui.widget.setStyleSheet("#widget{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0.00515464 rgba(85, 170, 255, 255), stop:1 rgba(245, 134, 255, 255));\n"
-# "border-radius:22px;\nborder-image: url(./18.jpg);\n}")
+        
+
         self.switch = False#窗体是否被拖动
         self.mixer=QMediaPlayer()
         self.timer=QTimer()
@@ -35,13 +34,16 @@ class Window(QMainWindow):
 
           
         # self.init_widget_background()
+        self.sys_argv_init=False #用户是否使用拖拽文件的方式打开了本程序
         self.init_gedan()  #初始化歌单
+        
         
 
 
         self.soupage=False #用于搜索结果和歌词界面切换
         self.rotate=0 #记录封面旋转的角度
         
+        self.look_fengmian=False  #封面是否隐藏
         #封面是否旋转
         self.turn_fengmian=False
         self.init_play_back_mode()# 初始化播放模式
@@ -53,7 +55,7 @@ class Window(QMainWindow):
         self.init_lrc()
 
         self.diy_background=False  #当前是否背景自定义
-        
+        # self.widget_transparent=False   #窗体当前状态是否透明
 
         self.ui.horizontalSlider_2.valueChanged.connect(self.setvolume)
         self.ui.horizontalSlider.sliderMoved.connect(self.upgrade_value)  
@@ -87,6 +89,9 @@ class Window(QMainWindow):
 
         self.ui.frame_15.setContextMenuPolicy(3)
         self.ui.frame_15.customContextMenuRequested[QPoint].connect(self.rightMenuShowFrame)
+
+        self.ui.pushButton_8.setContextMenuPolicy(3)
+        self.ui.pushButton_8.customContextMenuRequested[QPoint].connect(self.rightMenuShowbutton_8)
         
         #判断是否在播放时旋转封面，注意由于qt的限制我无法实现圆形封面旋转
         #采用的opencv圆形检测后并保存为test.jpg文件后再显示的，非常消耗内存，默认关闭
@@ -106,7 +111,8 @@ class Window(QMainWindow):
        '千千静听':baidu.baidu(),
        '一听音乐':oneting.oneting(),
        '51原唱':fivesing.fivesing('yc'),
-       '51翻唱':fivesing.fivesing('fc')}
+       '51翻唱':fivesing.fivesing('fc')
+       }
         self.song_name_list=[]
         self.singer_name_list=[]
         self.song_id_list=[]
@@ -136,6 +142,10 @@ class Window(QMainWindow):
         self.ui.frame_13.setStyleSheet("background-color: transparent;")
         self.ui.frame_12.setStyleSheet("background-color: transparent;")
         self.ui.frame_14.setStyleSheet("background-color: transparent;border-top-right-radius:20px;")
+#         self.ui.widget.setAttribute(Qt.WA_TranslucentBackground,True)
+#         self.ui.widget.setAttribute(Qt.WA_NoSystemBackground,False)
+#         self.ui.widget.setStyleSheet("#widget{background-color: transparent;\n"
+# "border-radius:22px;}")
 
     def do_background(self):
         self.ui.frame_15.setStyleSheet("background-color: rgb(255, 144, 179);")
@@ -154,49 +164,84 @@ class Window(QMainWindow):
 "border-radius:22px;}")
         # self.init_widget_background()
     def init_widget_background(self):
+        #初始化自定义封面文件夹中的.jpg文件,如果没检测到,配置不生效,如果只有一张图片,将在第三次不再随机轮播图片以免消耗内存
+        if len(self.img_list)<1:
+            self.do_background()
+            self.diy_background=False
+            self.timer2.stop()
+            print('未检测到.jpg文件')
+            return
+        elif len(self.img_list)==1:
+            self.un_background()
+            self.diy_background=True
+            self.timer2.stop()
+        else:
+            self.un_background()
+            self.diy_background=True
         img_num=random.randint(0,len(self.img_list)-1)
         if img_num==self.img_num:
             self.img_num=img_num=random.randint(0,len(self.img_list)-1)
         else:
             self.img_num=img_num
         url=self.img_list[self.img_num]
-
+        # print(url)
         self.ui.widget.setStyleSheet("#widget{border-radius:22px;\nborder-image: url("+url+");\n}")
-        self.un_background()
-        self.diy_background=True
+        
+
 
     def rightMenuShowFrame(self):
-        #
+        #在最左侧紫色区域或歌词区域右键弹出自定义背景或取消自定义背景,选择带有.jpg文件的文件夹
         menu=QMenu()
         menu.setStyleSheet("font: 12pt \"幼圆\";\n"
     "color: rgb(255, 128, 128);")
         if self.diy_background:
             menu.addAction(QAction(u'取消自定义背景', self,triggered=self.do_background)) #取消自定义背景
+            menu.addAction(QAction(u'更改自定义背景', self,triggered=self.init_img_list))
         else:
             menu.addAction(QAction(u'自定义背景', self,triggered=self.init_img_list))  #自定义背景
+        
+        if self.look_fengmian:
+            menu.addAction(QAction(u'取消隐藏', self,triggered=self.look_true_pushButton_8)) #取消隐藏
+        else:
+            menu.addAction(QAction(u'隐藏封面', self,triggered=self.look_false_pushButton_8))  #隐藏封面
+
+        menu.exec_(QtGui.QCursor.pos())
+    def rightMenuShowbutton_8(self):
+    
+        menu=QMenu()
+        menu.setStyleSheet("font: 12pt \"幼圆\";\n"
+    "color: rgb(255, 128, 128);")
+        if self.turn_fengmian:
+            menu.addAction(QAction(u'取消旋转', self,triggered=self.fengmian)) #取消旋转
+        else:
+            menu.addAction(QAction(u'旋转封面', self,triggered=self.fengmian))  #旋转封面
+        if self.look_fengmian==False:
+        #     menu.addAction(QAction(u'取消隐藏', self,triggered=self.look_true_pushButton_8)) #取消隐藏
+        # else:
+            menu.addAction(QAction(u'隐藏封面', self,triggered=self.look_false_pushButton_8))  #隐藏封面
+
         menu.exec_(QtGui.QCursor.pos())
     def rightMenuShow(self):
-        def bofang():
-            num=self.ui.listWidget.currentRow()
-            self.playlist.setCurrentIndex(num)
-            if self.state=="stop":
-                self.dianji()
+        #歌单右键,在歌单只有一首歌的时候右键不会显示删除
         def shanchu():
             num=self.ui.listWidget.currentRow()
             songname=self.songnamelist[num].split('.')[0]
-            self.songnamelist.pop(num)
-            self.ui.listWidget.takeItem(num)
             a = QMessageBox.question(self, '删除', '你是否要删除本地文件？', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if a==QMessageBox.Yes:
-                dirlist=os.listdir('./music')
-                for i in dirlist:
-                    if i.split('.')[-1] in ['mp3','jpg','lrc','txt']:
-                        # return   #删除保护，不删除其他同名但扩展名不同的文件
-                        if i.split('.')[0]==songname:
-                            os.remove('./music/'+i)
-                            print('已删除：'+'./music/'+i)
+                if self.sys_argv_init:
+                    os.remove(self.songnamelist[num])     #如果用户以拖拽文件的方式打开，就直接按照原路径删除
+                else:
+                    dirlist=os.listdir('./music')
+                    for i in dirlist:
+                        if i.split('.')[-1] in ['mp3','jpg','lrc','txt']:
+                            # return   #删除保护，不删除其他同名但扩展名不同的文件
+                            if i.split('.')[0]==songname:
+                                os.remove('./music/'+i)
+                                print('已删除：'+'./music/'+i)
             else:
                 print('下次刷新将会重新显示！')
+            self.songnamelist.pop(num)
+            self.ui.listWidget.takeItem(num)
             self.playlist.removeMedia(num)
             self.init_fengmian()   #有可能删除的是正在播放的歌曲，所以在删除之后刷新一下封面和歌词信息
         def init_gedan():
@@ -230,14 +275,43 @@ class Window(QMainWindow):
         menu.setStyleSheet("font: 12pt \"幼圆\";\n"
     "color: rgb(255, 128, 128);")
 
-        menu.addAction(QAction(u'播放', self, triggered=bofang))  #播放当前选中的条目 
-        menu.addAction(QAction(u'删除', self, triggered=shanchu))  #删除当前选中的条目
+        menu.addAction(QAction(u'播放', self, triggered=self.double_list))  #播放当前选中的条目 
+        if len(self.songnamelist)>1:
+            menu.addAction(QAction(u'删除', self, triggered=shanchu))  #删除当前选中的条目
         menu.addAction(QAction(u'刷新', self, triggered=init_gedan))  #刷新歌单
         menu.exec_(QtGui.QCursor.pos())
     #初始化歌单
     def init_gedan(self):
         if os.path.exists('./music')==False:
             os.mkdir('./music') 
+        if len(sys.argv[1:])>=1:
+            self.songnamelist=[]
+            ls=sys.argv[1:]
+            for i in ls:
+                if '.mp3' in i:
+                    p=pathlib.PureWindowsPath(i)
+                    r=str(p.as_posix())
+                    try:
+                        self.playlist.addMedia(QMediaContent(QUrl(r)))
+                        self.songnamelist.append(i)
+                        print(i)
+                    except:
+                        print("本程序无法播放,所以不予加载:"+i)
+                else:
+                    print("本程序无法播放,所以不予加载:"+i)
+            if len(self.songnamelist)>=1:
+                self.songnum=0  # 用于控制当前播放的是哪一首音乐
+                self.uptime=True #是否可以更新播放进度条，当用户拖动进度条时，不更新进度条，否则会造成当前播放进度显示出错
+                self.state="stop" #定义播放器当前状态
+                self.playlist.setCurrentIndex(self.songnum)
+                self.mixer.setPlaylist(self.playlist) #加入歌单
+                self.songtitle()#初始化左下角显示歌曲名
+                self.init_list()#初始化列表
+                self.sys_argv_init=True #用户使用拖拽文件的方式打开了本程序
+                return
+            # else:
+            #     return
+        
         dirlist=os.listdir('./music')
         self.songnamelist=[]
         for i in dirlist:
@@ -259,6 +333,15 @@ class Window(QMainWindow):
         self.songtitle()#初始化左下角显示歌曲名
         self.init_list()#初始化列表
 
+    def look_true_pushButton_8(self):
+        self.ui.pushButton_8.setVisible(True)
+        self.look_fengmian=False
+        self.timer.start(250)
+    def look_false_pushButton_8(self):
+        self.ui.pushButton_8.setVisible(False)
+        self.look_fengmian=True
+        self.timer.stop()
+    #设置展示搜索列表,不展示歌词和大封面
     def undis_one(self):
         if self.soupage==False:
             self.ui.label_5.setVisible(False)
@@ -271,6 +354,7 @@ class Window(QMainWindow):
             self.ui.pushButton_8.setVisible(False)
             self.ui.listWidget_2.setVisible(True)
             self.soupage=True
+    #设置不展示搜索列表,展示歌词和大封面
     def dis_one(self):
         if self.soupage:
             self.ui.label_5.setVisible(True)
@@ -283,15 +367,16 @@ class Window(QMainWindow):
             self.ui.pushButton_8.setVisible(True)
             self.ui.listWidget_2.setVisible(False)
             self.soupage=False
-
+    #搜索歌名,歌手,歌词
     def search(self):
         self.is_api=self.api[self.ui.comboBox.currentText()]
         text=self.ui.lineEdit.text()
         if text=='':
-            print("没有输入内容")
+            print("没有输入内容")   #搜索保护
             return
         self.ui.listWidget_2.clear()
 
+        #搜索,另开线程以免搜索的服务器长时间无反应导致界面假死
         self.my_thread = search_thread(text,self.is_api)
         self.my_thread.mysignal.connect(self.search_print)
         self.my_thread.start()
@@ -317,7 +402,7 @@ class Window(QMainWindow):
         self.ui.listWidget_2.setVisible(True)
         self.soupage=True
 
-
+    #双击指定位置,下载其歌曲数据
     def list_download(self):
         num=self.ui.listWidget_2.currentRow()
         songname=self.song_name_list[num]
@@ -373,19 +458,16 @@ class Window(QMainWindow):
         # print(len(self.songnamelist)-1)
 
         
-
+    #初始化本地歌单列表,以及歌单的双击事件
     def init_list(self):
         self.ui.listWidget.addItems(self.songnamelist)
     def double_list(self,index):
-        # print(self.ui.listWidget.item(self.ui.listWidget.row(index)).text())
-        # print(index)
         num=self.ui.listWidget.currentRow()
         self.playlist.setCurrentIndex(num)
-        # print(num)
         if self.state=="stop":
             self.dianji()
-        # self.state="start"
 
+    #歌曲的播放和暂停
     def dianji(self):
         if self.state=="start":
             self.state="stop"
@@ -397,26 +479,21 @@ class Window(QMainWindow):
             self.mixer.play()
             self.ui.pushButton_3.setIcon(QIcon(":/image/image/暂停_pause-one.png"))
             self.timer.start(250)
+    #下一首
     def next(self):
         if self.playlist.nextIndex()==-1:
             self.state="stop"
             self.dianji()
             self.dianji()
-            
-        # print(self.playlist.nextIndex(),self.state)
         self.playlist.next()
         self.this_songtime(0)
         
-        
- 
-        
+    #上一首
     def previous(self):
         if self.playlist.previousIndex()==-1:
             self.state="stop"
             self.dianji()
             self.dianji()
-        
-        # print(self.playlist.previousIndex(),self.state)
         self.playlist.previous()
         self.this_songtime(0)
 
@@ -424,8 +501,6 @@ class Window(QMainWindow):
     # 获取当前播放歌曲名
     def songtitle(self):
         name=self.songnamelist[self.playlist.currentIndex()]
-        
-
         #防止因歌曲名字过长导致无法正常显示进度条
 
         ls=name.split('-')
@@ -520,6 +595,7 @@ class Window(QMainWindow):
         self.playlist.setPlaybackMode(ls[s])
         self.ui.pushButton_5.setIcon(lt[s])
         print(mode[s])
+    #初始化封面,内含初始化歌词、初始化封面旋转角度、初始化标题
     def init_fengmian(self):
         #更新当前播放的歌曲在列表中显示
         # print(self.self.playlist.currentIndex())
@@ -539,30 +615,19 @@ class Window(QMainWindow):
             
             self.ui.pushButton.setStyleSheet("border-radius:40px;\n"
 "border-image: url(./music/{});\n".format(ls[0]))
-            # self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
-            # "border-image: url(./music/{});\n".format(ls[0]))
-            
             self.img=self.init_cv_circle("./music/{}".format(ls[0]))
-            
-            
             self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
 "border-image: url(./music/{});\n".format(ls[0]))
 
         else:
-        #     self.ui.pushButton.setIcon(QIcon(":/image/image/5.jpg"))
-        #     # self.ui.pushButton_8.setIcon(QIcon(":/image/image/5.jpg"))
             self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
                 "border-image: url(:/image/image/5.jpg);\n"
             )
             self.ui.pushButton.setStyleSheet("border-radius:40px;\n"
             "border-image: url(:/image/image/5.jpg);\n"
             )
-            # img=QPixmap(":/image/image/5.jpg")
             self.img=self.qtpixmap_to_cvimg(QPixmap(":/image/image/5.jpg"))
-            # self.img=self.init_cv_circle("./image/5.jpg")
-            
-
-
+    
         #初始化封面
         
         self.slotRotate()
@@ -581,6 +646,7 @@ class Window(QMainWindow):
             self.get_lrc_by_time(1000)
         self.rotate=0  #初始化封面旋转角度
 
+    #初始化歌词列表
     def get_lrc(self):
         dirlist=os.listdir('./music')
         songlrcname=[]
@@ -668,6 +734,7 @@ class Window(QMainWindow):
         #对时间戳进行排序,降序
         time_list.sort(reverse=True)
         return time_list,lrc_dict
+    #显示歌词列表
     def get_lrc_by_time(self,time):
         if self.time_list==[]:
             self.ui.label_8.setText("未找到该歌曲的歌词")
@@ -687,7 +754,7 @@ class Window(QMainWindow):
                 except:
                     self.ui.label_8.setText(self.lrc_dict[j])
                 break
-            
+    # 初始化歌词为空   
     def init_lrc(self):
         self.ui.label_11.setText("")
         self.ui.label_10.setText("")
@@ -695,10 +762,7 @@ class Window(QMainWindow):
         self.ui.label_7.setText("")
         self.ui.label_6.setText("")
         self.ui.label_5.setText("")
-        # print(self.lrc_dict[self.time_list[-1]])
-        #         return self.lrc_dict[i]
-        # return  self.lrc_dict[self.time_list[-1]]
-        
+    # 旋转封面
     def r_fengmian(self):
         self.slotRotate()
     
@@ -711,6 +775,7 @@ class Window(QMainWindow):
     def slotRotate(self):
         if self.turn_fengmian==False:
             return
+        # 效果不好,最后使用opencv做的旋转封面
         # image=self.cvimg_to_qtimg(self.img)
         # transform = QTransform()##需要用到pyqt5中QTransform函数
         # transform.rotate(90) ##设置旋转角度——顺时针旋转90°
@@ -733,6 +798,7 @@ class Window(QMainWindow):
         image =cv2.imdecode(np.fromfile(img,dtype=np.uint8),-1)
         return image
 
+    #pt格式的pixmap文件转opencv文件
     def qtpixmap_to_cvimg(self,qtpixmap):
         qimg = qtpixmap.toImage()
         temp_shape = (qimg.height(), qimg.bytesPerLine() * 8 // qimg.depth())
@@ -749,7 +815,6 @@ class Window(QMainWindow):
             self.switch = True
         else:
             self.switch = False
-
         self.mouse_x = evt.globalX()
         self.mouse_y = evt.globalY()
         self.window_x = self.x()
