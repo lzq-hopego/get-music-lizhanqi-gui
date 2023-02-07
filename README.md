@@ -4,11 +4,11 @@
 
 ## 第一次使用时
 - 由于没有创建music文件夹或music文件夹为空，都会进入引导，引导界面不要直接点击播放，要再下载完歌曲之后再播放
-![第一次打开时](./start.jpg)  
+[![第一次打开时](https://s1.ax1x.com/2023/02/07/pSgd5kD.jpg)]
 
 ## 下载了一首歌之后
 - 并重启或右键刷新后，右侧的使用说明就没了，接下来就可以愉快的享受歌曲的带来的快乐了
-![测试图片](./test2.jpg)
+[![测试图片](https://s1.ax1x.com/2023/02/07/pSgdhTO.jpg)](https://imgse.com/i/pSgdhTO)
 
 如果你想了解[get-music-lizhanqi](https://github.com/lzq-hopego/get-music-lizhanqi)请移步，他也是我的项目，也是这个qt页面的后端
 
