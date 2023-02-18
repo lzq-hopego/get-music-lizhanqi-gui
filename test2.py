@@ -23,7 +23,7 @@ class Window(QMainWindow):
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         
-
+        self.music_path='./music'   #初始化本地歌单位置
         self.switch = False#窗体是否被拖动
         self.mixer=QMediaPlayer()
         self.timer=QTimer()
@@ -42,6 +42,7 @@ class Window(QMainWindow):
 
         self.soupage=False #用于搜索结果和歌词界面切换
         self.rotate=0 #记录封面旋转的角度
+        self.music_speed=1.0 #定义音乐播放速度
         
         self.look_fengmian=False  #封面是否隐藏
         #封面是否旋转
@@ -75,6 +76,7 @@ class Window(QMainWindow):
         self.ui.pushButton_6.clicked.connect(self.search)
         self.ui.listWidget_2.doubleClicked.connect(self.list_download)
         self.ui.pushButton_8.clicked.connect(self.fengmian)
+        # self.ui.pushButton_13.clicked.connect(self.beisu)
         # self.ui.pushButton.doubleClicked.connect(self.fengmian)
         # self.ui.pushButton_3.clicked.connect(self.dis_one)
         # self.ui.pushButton_7.clicked.connect(self.undis_one)
@@ -92,6 +94,7 @@ class Window(QMainWindow):
 
         self.ui.pushButton_8.setContextMenuPolicy(3)
         self.ui.pushButton_8.customContextMenuRequested[QPoint].connect(self.rightMenuShowbutton_8)
+
         
         #判断是否在播放时旋转封面，注意由于qt的限制我无法实现圆形封面旋转
         #采用的opencv圆形检测后并保存为test.jpg文件后再显示的，非常消耗内存，默认关闭
@@ -119,6 +122,8 @@ class Window(QMainWindow):
     def init_img_list(self):
         directory = QFileDialog.getExistingDirectory(None,"选取文件夹")
         # path=''
+        if directory=='':
+            return
         dirlist=os.listdir(directory)
         ls=[]
         for j in dirlist:
@@ -186,7 +191,7 @@ class Window(QMainWindow):
         url=self.img_list[self.img_num]
         # print(url)
         self.ui.widget.setStyleSheet("#widget{border-radius:22px;\nborder-image: url("+url+");\n}")
-        
+        # self.ui.widget.setWindowOpacity(0.5)
 
 
     def rightMenuShowFrame(self):
@@ -199,11 +204,11 @@ class Window(QMainWindow):
             menu.addAction(QAction(u'更改自定义背景', self,triggered=self.init_img_list))
         else:
             menu.addAction(QAction(u'自定义背景', self,triggered=self.init_img_list))  #自定义背景
-        
-        if self.look_fengmian:
-            menu.addAction(QAction(u'取消隐藏', self,triggered=self.look_true_pushButton_8)) #取消隐藏
-        else:
-            menu.addAction(QAction(u'隐藏封面', self,triggered=self.look_false_pushButton_8))  #隐藏封面
+        if self.soupage==False:
+            if self.look_fengmian:
+                menu.addAction(QAction(u'取消隐藏', self,triggered=self.look_true_pushButton_8)) #取消隐藏
+            else:
+                menu.addAction(QAction(u'隐藏封面', self,triggered=self.look_false_pushButton_8))  #隐藏封面
 
         menu.exec_(QtGui.QCursor.pos())
     def rightMenuShowbutton_8(self):
@@ -242,8 +247,9 @@ class Window(QMainWindow):
                 print('下次刷新将会重新显示！')
             self.songnamelist.pop(num)
             self.ui.listWidget.takeItem(num)
+            if self.playlist.currentIndex()==num:
+                self.init_fengmian()   #有可能删除的是正在播放的歌曲，所以在删除之后刷新一下封面和歌词信息
             self.playlist.removeMedia(num)
-            self.init_fengmian()   #有可能删除的是正在播放的歌曲，所以在删除之后刷新一下封面和歌词信息
         def init_gedan():
                 self.playlist.removeMedia(0,len(self.songnamelist)-1)
                 self.ui.listWidget.clear()
@@ -282,9 +288,11 @@ class Window(QMainWindow):
         menu.exec_(QtGui.QCursor.pos())
     #初始化歌单
     def init_gedan(self):
-        if os.path.exists('./music')==False:
-            os.mkdir('./music') 
+        
+        print(sys.argv)
         if len(sys.argv[1:])>=1:
+            self.music_path='\\'.join(sys.argv[0].split('\\')[:-1])+"\\music"
+            print(self.music_path)
             self.songnamelist=[]
             ls=sys.argv[1:]
             for i in ls:
@@ -311,7 +319,8 @@ class Window(QMainWindow):
                 return
             # else:
             #     return
-        
+        if os.path.exists('./music')==False:
+            os.mkdir('./music') 
         dirlist=os.listdir('./music')
         self.songnamelist=[]
         for i in dirlist:
@@ -332,6 +341,8 @@ class Window(QMainWindow):
         self.mixer.setPlaylist(self.playlist) #加入歌单
         self.songtitle()#初始化左下角显示歌曲名
         self.init_list()#初始化列表
+
+
 
     def look_true_pushButton_8(self):
         self.ui.pushButton_8.setVisible(True)
@@ -364,9 +375,11 @@ class Window(QMainWindow):
             self.ui.label_9.setVisible(True)
             self.ui.label_10.setVisible(True)
             self.ui.label_11.setVisible(True)
-            self.ui.pushButton_8.setVisible(True)
+            if self.look_fengmian==False:
+                self.ui.pushButton_8.setVisible(True)
             self.ui.listWidget_2.setVisible(False)
             self.soupage=False
+            # self.look_fengmian=False
     #搜索歌名,歌手,歌词
     def search(self):
         self.is_api=self.api[self.ui.comboBox.currentText()]
@@ -420,7 +433,7 @@ class Window(QMainWindow):
         img_url=self.is_api.get_music_pic(num,return_url=True)
         lrc_url=self.is_api.get_music_lrc(num,return_url=True)
 
-        rstr = r"[\/\\\:\*\?\"\<\>\|\&]"  # '/ \ : * ? " < > |'
+        rstr = r"[\/\\\:\*\?\"\<\>\|\&\•\·]"  # '/ \ : * ? " < > |'
         self.name = re.sub(rstr, "_", name)  # 替换为下划线
 
         # print(img_url,self.url)
@@ -431,13 +444,13 @@ class Window(QMainWindow):
  
         try:
             if "http" in lrc_url:
-                    download.download(lrc_url,"./music/"+name+".lrc",or_re=False)
+                    download.download(lrc_url,"./music/"+self.name+".lrc",or_re=False)
             else:
                 try:
-                    with open("./music/"+name+".txt",'w') as f:
+                    with open("./music/"+self.name+".txt",'w') as f:
                         f.write(lrc_url)
                 except:
-                    with open("./music/"+name+".txt",'w',encoding="utf-8") as f:
+                    with open("./music/"+self.name+".txt",'w',encoding="utf-8") as f:
                         f.write(lrc_url)
         except:
             print('无法获取歌词链接')
@@ -842,6 +855,7 @@ class mythread(QThread):  # 步骤1.创建一个线程实例
     def run(self):
         if "http" in self.url:
             self.mutex.lock()
+            print(self.url1)
             downloader.download([self.url,self.name,self.url1,self.name1])
             text=self.name.split("music/")[-1].split(".")[0]
             self.mysignal.emit((text,1))

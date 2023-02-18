@@ -10,6 +10,7 @@ from functools import partial
 from threading import Event
 from typing import Iterable
 from urllib.request import urlopen
+import requests
 
 from rich.progress import (
     BarColumn,
@@ -46,12 +47,13 @@ signal.signal(signal.SIGINT, handle_sigint)
 
 def copy_url(task_id: TaskID, url: str, path: str) -> None:
     """Copy data from a url to a local file."""
-    response = urlopen(url)
+    # response = urlopen(url)
+    response=requests.get(url,stream=True)
     # This will break if the response doesn't contain content length
-    progress.update(task_id, total=int(response.info()["Content-length"]))
+    progress.update(task_id, total=int(response.headers["Content-length"]))
     with open(path, "wb") as dest_file:
         progress.start_task(task_id)
-        for data in iter(partial(response.read, 32768), b""):
+        for data in response.iter_content(chunk_size = 1024):
             dest_file.write(data)
             progress.update(task_id, advance=len(data))
             if done_event.is_set():
@@ -75,10 +77,11 @@ def download(urls: Iterable[str]):
                     task_id = progress.add_task("download", filename=filename, start=False)
                     pool.submit(copy_url, task_id, url, dest_path)
 
-
+# download(['http://music.163.com/song/media/outer/url?id=1971659843.mp3','2.mp3'])
 # if __name__ == "__main__":
 #     # Try with https://releases.ubuntu.com/20.04/ubuntu-20.04.3-desktop-amd64.iso
 #     if sys.argv[1:]:
 #         download(sys.argv[1:], "")
 #     else:
+
 #         print("Usage:\n\tpython downloader.py URL1 URL2 URL3 (etc)")
