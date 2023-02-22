@@ -433,7 +433,7 @@ class Window(QMainWindow):
         img_url=self.is_api.get_music_pic(num,return_url=True)
         lrc_url=self.is_api.get_music_lrc(num,return_url=True)
 
-        rstr = r"[\/\\\:\*\?\"\<\>\|\&\•\·]"  # '/ \ : * ? " < > |'
+        rstr = r"[\/\\\:\*\?\"\<\>\|\&\•\·\°]"  # '/ \ : * ? " < > |'
         self.name = re.sub(rstr, "_", name)  # 替换为下划线
 
         # print(img_url,self.url)
