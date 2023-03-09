@@ -18,8 +18,7 @@
 
 ## 支持窗体透明
 - 同上右键   会显示‘设置窗体透明度’
-![示例](https://user-images.githubusercontent.com/94416555/224029569-8e1fb7f9-78d3-483a-bc4e-a23a7ac7e739.png)
-
+[!示例](https://s1.ax1x.com/2023/03/09/ppnDICd.md.jpg)](https://imgse.com/i/ppnDICd)
 
 ## 使用安装
 
