@@ -18,7 +18,7 @@
 
 ## 支持窗体透明
 - 同上右键   会显示‘设置窗体透明度’
-[!示例](https://s1.ax1x.com/2023/03/09/ppnDICd.md.jpg)](https://imgse.com/i/ppnDICd)
+[![示例](https://s1.ax1x.com/2023/03/09/ppnDICd.md.jpg)](https://imgse.com/i/ppnDICd)
 
 ## 使用安装
 
