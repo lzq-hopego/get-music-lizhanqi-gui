@@ -17,7 +17,8 @@
 [![示例图](https://s1.ax1x.com/2023/02/07/pSgdIte.jpg)](https://imgse.com/i/pSgdIte)
 
 ## 支持窗体透明
-- 同上右键会显示‘设置窗体透明度’
+- 同上右键会显示"设置窗体透明度"
+
 [![示例](https://s1.ax1x.com/2023/03/09/ppnr5ZT.md.jpg)](https://imgse.com/i/ppnr5ZT)
 
 ## 使用安装
