@@ -19,6 +19,7 @@ class Ui_MainWindow(object):
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/image/image/5.jpg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         MainWindow.setWindowIcon(icon)
+        self.MainWindow=MainWindow
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.widget = QtWidgets.QWidget(self.centralwidget)
@@ -180,7 +181,7 @@ class Ui_MainWindow(object):
         self.frame_15.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_15.setObjectName("frame_15")
         self.frame_20 = QtWidgets.QFrame(self.frame_15)
-        self.frame_20.setGeometry(QtCore.QRect(230, 10, 471, 510))
+        self.frame_20.setGeometry(QtCore.QRect(170, 10, 471, 510))
         self.frame_20.setMinimumSize(QtCore.QSize(471, 510))
         self.frame_20.setMaximumSize(QtCore.QSize(471, 510))
         self.frame_20.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -237,7 +238,7 @@ class Ui_MainWindow(object):
 "font: 12pt \"幼圆\";")
         self.listWidget_2.setObjectName("listWidget_2")
         self.pushButton_8 = QtWidgets.QPushButton(self.frame_15)
-        self.pushButton_8.setGeometry(QtCore.QRect(20, 20, 160, 160))
+        self.pushButton_8.setGeometry(QtCore.QRect(10, 10, 160, 160))
         self.pushButton_8.setStyleSheet("border-image: url(:/image/image/5.jpg);\n"
 "border-radius:80px;")
         self.pushButton_8.setText("")
@@ -398,6 +399,7 @@ class Ui_MainWindow(object):
 "right:2px;\n"
 "margin:0px;\n"
 "background:#ffffff;\n"
+"border-radius:5px;\n"
 "}\n"
 "QSlider#horizontalSlider::handle:horizontal{\n"
 "width:10px;\n"
@@ -410,7 +412,8 @@ class Ui_MainWindow(object):
 "QSlider#horizontalSlider::sub-page:horizontal{\n"
 "background:qlineargradient(spread:pad, x1:0,y1:1, x2:1,y2:1, \n"
 "stop:0 rgba(231,80,229,255),\n"
-"stop:1 rgba(7,208,255,255))\n"
+"stop:1 rgba(7,208,255,255));\n"
+"border-radius:5px;\n"
 "}")
         self.horizontalSlider.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider.setObjectName("horizontalSlider")
@@ -453,6 +456,7 @@ class Ui_MainWindow(object):
 "right:2px;\n"
 "margin:0px;\n"
 "background:#ffffff;\n"
+"border-radius:3px;\n"
 "}\n"
 "QSlider#horizontalSlider_2::handle:horizontal{\n"
 "width:6px;\n"
@@ -465,7 +469,8 @@ class Ui_MainWindow(object):
 "QSlider#horizontalSlider_2::sub-page:horizontal{\n"
 "background:qlineargradient(spread:pad, x1:0,y1:1, x2:1,y2:1, \n"
 "stop:0 rgba(231,80,229,255),\n"
-"stop:1 rgba(7,208,255,255))\n"
+"stop:1 rgba(7,208,255,255));\n"
+"border-radius:3px;\n"
 "}")
         self.horizontalSlider_2.setOrientation(QtCore.Qt.Horizontal)
         self.horizontalSlider_2.setObjectName("horizontalSlider_2")
@@ -522,4 +527,5 @@ class Ui_MainWindow(object):
         self.label_2.setText(_translate("MainWindow", "歌手"))
         self.label_3.setText(_translate("MainWindow", "00:00"))
         self.label_4.setText(_translate("MainWindow", "00:00"))
+        self.MainWindow=MainWindow
 import image_rc

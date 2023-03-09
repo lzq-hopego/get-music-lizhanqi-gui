@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QMenu,QAction,QMessageBox,QFileDialog
 from PyQt5 import QtGui
 import sys,os
 from ui2 import Ui_MainWindow
+# from Ui_touming import Ui_MainWindow as touming
 import re
 import cv2
 from get_music import *
@@ -21,6 +22,9 @@ class Window(QMainWindow):
         self.ui.setupUi(self)
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
+        
+        
+        # this->setWindowFlags(Qt::FramelessWindowHint)
 
         
         self.music_path='./music'   #初始化本地歌单位置
@@ -34,6 +38,7 @@ class Window(QMainWindow):
 
           
         # self.init_widget_background()
+        self.background_transparent=False #窗体是否透明
         self.sys_argv_init=False #用户是否使用拖拽文件的方式打开了本程序
         self.init_gedan()  #初始化歌单
         
@@ -56,7 +61,6 @@ class Window(QMainWindow):
         self.init_lrc()
 
         self.diy_background=False  #当前是否背景自定义
-        # self.widget_transparent=False   #窗体当前状态是否透明
 
         self.ui.horizontalSlider_2.valueChanged.connect(self.setvolume)
         self.ui.horizontalSlider.sliderMoved.connect(self.upgrade_value)  
@@ -209,8 +213,19 @@ class Window(QMainWindow):
                 menu.addAction(QAction(u'取消隐藏', self,triggered=self.look_true_pushButton_8)) #取消隐藏
             else:
                 menu.addAction(QAction(u'隐藏封面', self,triggered=self.look_false_pushButton_8))  #隐藏封面
-
+        if self.background_transparent:
+            menu.addAction(QAction(u'取消窗体透明度', self,triggered=self.setOpacity))
+        else:
+            menu.addAction(QAction(u'设置窗体透明度', self,triggered=self.setOpacity))
         menu.exec_(QtGui.QCursor.pos())
+    def setOpacity(self):
+        if self.background_transparent:
+            self.ui.MainWindow.setWindowOpacity(1)
+            self.background_transparent=False
+        else:
+            self.ui.MainWindow.setWindowOpacity(0.5)
+            self.background_transparent=True
+
     def rightMenuShowbutton_8(self):
     
         menu=QMenu()
@@ -289,7 +304,8 @@ class Window(QMainWindow):
     #初始化歌单
     def init_gedan(self):
         
-        print(sys.argv)
+        # print(sys.argv)
+        print('开始初始化歌单')
         if len(sys.argv[1:])>=1:
             self.music_path='\\'.join(sys.argv[0].split('\\')[:-1])+"\\music"
             print(self.music_path)
@@ -482,6 +498,8 @@ class Window(QMainWindow):
 
     #歌曲的播放和暂停
     def dianji(self):
+        # self.ui.MainWindow.setWindowOpacity(0.5)
+        # touming.show()
         if self.state=="start":
             self.state="stop"
             self.mixer.pause()
@@ -855,7 +873,7 @@ class mythread(QThread):  # 步骤1.创建一个线程实例
     def run(self):
         if "http" in self.url:
             self.mutex.lock()
-            print(self.url1)
+            # print(self.url1)
             downloader.download([self.url,self.name,self.url1,self.name1])
             text=self.name.split("music/")[-1].split(".")[0]
             self.mysignal.emit((text,1))
@@ -880,6 +898,9 @@ class search_thread(QThread):
         self.mutex.unlock()
 
 
+    
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     
@@ -887,3 +908,6 @@ if __name__ == '__main__':
 
     window.show()
     sys.exit(app.exec_())
+    # window = touming()
+    # window.show()
+    # sys.exit(app.exec_())
