@@ -1,16 +1,16 @@
 from PyQt5.Qt import *
-from PyQt5.QtCore import QTimer, QUrl,QPoint
+from PyQt5.QtCore import QTimer, QUrl,QPoint,QCoreApplication
 from PyQt5.QtMultimedia import QMediaPlayer,QMediaPlaylist, QMediaContent
-from PyQt5.QtWidgets import QMenu,QAction,QMessageBox,QFileDialog
+from PyQt5.QtWidgets import QMenu,QAction,QMessageBox,QFileDialog,QProgressDialog
 from PyQt5 import QtGui
 import sys,os
 from ui2 import Ui_MainWindow
-# from Ui_touming import Ui_MainWindow as touming
 import re
 import cv2
 from get_music import *
 import numpy as np
-import downloader
+import requests
+# import downloader
 import pathlib
 import random
 
@@ -23,16 +23,16 @@ class Window(QMainWindow):
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         
-        
-        # this->setWindowFlags(Qt::FramelessWindowHint)
 
         
         self.music_path='./music'   #初始化本地歌单位置
         self.switch = False#窗体是否被拖动
         self.mixer=QMediaPlayer()
+        #用于控制封面旋转
         self.timer=QTimer()
+        #用于控制背景图片轮播的
         self.timer2=QTimer()
-
+        #音乐列表
         self.playlist=QMediaPlaylist()
 
 
@@ -80,6 +80,7 @@ class Window(QMainWindow):
         self.ui.pushButton_6.clicked.connect(self.search)
         self.ui.listWidget_2.doubleClicked.connect(self.list_download)
         self.ui.pushButton_8.clicked.connect(self.fengmian)
+        self.ui.lineEdit.returnPressed.connect(self.search)
         # self.ui.pushButton_13.clicked.connect(self.beisu)
         # self.ui.pushButton.doubleClicked.connect(self.fengmian)
         # self.ui.pushButton_3.clicked.connect(self.dis_one)
@@ -87,6 +88,7 @@ class Window(QMainWindow):
         # self.ui.widget_4.setVisible(False)
 
 
+        #设置右键按钮
         self.ui.listWidget.setContextMenuPolicy(3)
         self.ui.listWidget.customContextMenuRequested[QPoint].connect(self.rightMenuShow)
 
@@ -98,6 +100,9 @@ class Window(QMainWindow):
 
         self.ui.pushButton_8.setContextMenuPolicy(3)
         self.ui.pushButton_8.customContextMenuRequested[QPoint].connect(self.rightMenuShowbutton_8)
+
+        self.ui.listWidget_2.setContextMenuPolicy(3)
+        self.ui.listWidget_2.customContextMenuRequested[QPoint].connect(self.rightMenuDownload)
 
         
         #判断是否在播放时旋转封面，注意由于qt的限制我无法实现圆形封面旋转
@@ -123,6 +128,7 @@ class Window(QMainWindow):
         self.song_name_list=[]
         self.singer_name_list=[]
         self.song_id_list=[]
+
     def init_img_list(self):
         directory = QFileDialog.getExistingDirectory(None,"选取文件夹")
         # path=''
@@ -196,6 +202,32 @@ class Window(QMainWindow):
         # print(url)
         self.ui.widget.setStyleSheet("#widget{border-radius:22px;\nborder-image: url("+url+");\n}")
         # self.ui.widget.setWindowOpacity(0.5)
+
+    def rightMenuDownload(self):
+        text=self.ui.lineEdit.text()
+        def page_top():
+            #搜索,另开线程以免搜索的服务器长时间无反应导致界面假死
+            self.my_thread = search_thread(text,self.is_api,page='-1')
+            self.my_thread.mysignal.connect(self.search_print)
+            self.my_thread.start()
+            self.ui.listWidget_2.addItem("正在搜索中....")
+        def page_bottom():
+            self.my_thread = search_thread(text,self.is_api,page='+1')
+            self.my_thread.mysignal.connect(self.search_print)
+            self.my_thread.start()
+            self.ui.listWidget_2.addItem("正在搜索中....")
+        menu=QMenu()
+        menu.setStyleSheet("font: 12pt \"幼圆\";\n"
+    "color: rgb(255, 128, 128);")
+        num=self.ui.listWidget_2.currentRow()
+        if num!=-1:
+            menu.addAction(QAction(u'下载', self, triggered=self.list_download))  #下载当前选中的条目 
+            menu.addAction(QAction(u'上一页', self, triggered=page_top))  #上一页列表
+            menu.addAction(QAction(u'下一页', self, triggered=page_bottom))  #下一页列表
+        else:
+            QMessageBox.question(self, '提示', '搜索列表为空，请搜索后右键!', QMessageBox.Yes, QMessageBox.Yes)
+            self.dis_one()
+        menu.exec_(QtGui.QCursor.pos())
 
 
     def rightMenuShowFrame(self):
@@ -307,6 +339,9 @@ class Window(QMainWindow):
         # print(sys.argv)
         print('开始初始化歌单')
         if len(sys.argv[1:])>=1:
+            if sys.argv[1]=='-z':
+                os.system('ffmpeg.exe -i {:} -ab 256k -ac 2 {:}.mp3'.format(sys.argv[2],sys.argv[2].split(".")[0]))
+                sys.exit()
             self.music_path='\\'.join(sys.argv[0].split('\\')[:-1])+"\\music"
             print(self.music_path)
             self.songnamelist=[]
@@ -406,7 +441,7 @@ class Window(QMainWindow):
         self.ui.listWidget_2.clear()
 
         #搜索,另开线程以免搜索的服务器长时间无反应导致界面假死
-        self.my_thread = search_thread(text,self.is_api)
+        self.my_thread = search_thread(text,self.is_api,page='0')
         self.my_thread.mysignal.connect(self.search_print)
         self.my_thread.start()
         self.ui.listWidget_2.addItem("正在搜索中....")
@@ -415,7 +450,8 @@ class Window(QMainWindow):
     def search_print(self,song):
         song_name_list=song[0]
         singer_name_list=song[1]
-        song_id_list=song[-1]
+        song_id_list=song[-2]
+        self.song_list_page=song[-1]
         self.song_name_list,self.singer_name_list,self.song_id_list=song_name_list,singer_name_list,song_id_list
         self.ui.listWidget_2.clear()
         try:
@@ -430,9 +466,11 @@ class Window(QMainWindow):
                 self.ui.listWidget_2.addItem("接口失效,可以联系管理员进行修复，QQ邮箱：310197835@qq.com")
         self.ui.listWidget_2.setVisible(True)
         self.soupage=True
+        
 
     #双击指定位置,下载其歌曲数据
     def list_download(self):
+
         num=self.ui.listWidget_2.currentRow()
         songname=self.song_name_list[num]
         singer=self.singer_name_list[num]
@@ -454,9 +492,18 @@ class Window(QMainWindow):
 
         # print(img_url,self.url)
         # 使用rich官方给的代码进行下载，是支持同时下载的  命令行    downloader.py url name url2 name2   最大支持4个任务同时下载
-        self.my_thread1 = mythread("./music/"+self.name+".jpg",img_url,"./music/"+self.name+".mp3",self.url)
-        self.my_thread1.mysignal.connect(self.addmusic)
-        self.my_thread1.start()
+        # self.my_thread1 = mythread("./music/"+self.name+".jpg",img_url,"./music/"+self.name+".mp3",self.url)
+        # self.my_thread1.mysignal.connect(self.addmusic)
+        # self.my_thread1.start()
+        try:
+            self.jindu(url=self.url,file_name=self.name+'.mp3')
+        except:
+            print('歌曲下载失败')
+        try:
+            self.jindu(url=img_url,file_name=self.name+".jpg")
+        except:
+            print('封面下载失败')
+        
  
         try:
             if "http" in lrc_url:
@@ -470,16 +517,15 @@ class Window(QMainWindow):
                         f.write(lrc_url)
         except:
             print('无法获取歌词链接')
-
+        self.addmusic(text=self.name)
 # #自动播放需要等到线程结束后再做，因为线程中直接自动播放会无法正常加载歌词和封面
     def addmusic(self,text):
-        print(text)
-        self.ui.listWidget.addItem(text[0]+".mp3")
-        self.songnamelist.append(text[0]+".mp3")
+        # print(text)
+        self.ui.listWidget.addItem(text+".mp3")
+        self.songnamelist.append(text+".mp3")
         if self.state=="stop":
                     self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(self.songnamelist[-1]))))
                     self.playlist.setCurrentIndex(len(self.songnamelist)-1)
-                    
                     self.dianji()
         else:
             self.playlist.addMedia(QMediaContent(QUrl("./music/{}".format(self.songnamelist[-1]))))
@@ -496,8 +542,36 @@ class Window(QMainWindow):
         if self.state=="stop":
             self.dianji()
 
+    def jindu(self,url,file_name):
+        """进度对话框"""
+        response = requests.get(url, stream = True,timeout = 0.8)
+        size = 0  # 初始化已下载大小
+        chunk_size = 1024  # 每次下载的数据大小
+        content_size = int(response.headers['content-length'])  # 下载文件总大小
+        elapsed = 100
+        self.progressDialog = QProgressDialog('下载进度', '取消', 0, elapsed, self)
+        self.progressDialog.canceled.connect(self.on_progressDialog_canceled)
+        self.progressDialog.setWindowTitle('正在下载:'+file_name)
+        self.progressDialog.setWindowModality(Qt.WindowModal)
+        self.progressDialog.setFixedSize(400,200)
+        self.progressDialog.show()
+        with open("./music/"+file_name, 'wb') as file:
+            for data in response.iter_content(chunk_size):
+                file.write(data)
+                size += len(data)
+                n = int(size * 100 / content_size)
+                self.progressDialog.setValue(n) #设置当前值
+                # print(n,elapsed,content_size)
+                QCoreApplication.processEvents()  #动态刷新值
+                if self.progressDialog.wasCanceled():   #用户点击取消按钮
+                    break
+        self.progressDialog.setValue(elapsed)
+    def on_progressDialog_canceled(self):
+        print("progressDialog进度对话框被取消啦！") 
+
     #歌曲的播放和暂停
     def dianji(self):
+        
         # self.ui.MainWindow.setWindowOpacity(0.5)
         # touming.show()
         if self.state=="start":
@@ -859,40 +933,56 @@ class Window(QMainWindow):
             vector_y = self.window_y + move_y
             self.move(vector_x, vector_y)
 #下载歌曲封面子线程
-class mythread(QThread):  # 步骤1.创建一个线程实例
-    mysignal = pyqtSignal(tuple)  # 创建一个自定义信号，元组参数
+# class mythread(QThread):  # 步骤1.创建一个线程实例
+#     mysignal = pyqtSignal(tuple)  # 创建一个自定义信号，元组参数
 
-    def __init__(self, name,url,name1,url1):  #通过初始化赋值的方式实现UI主线程传递值给子线程
-        super(mythread, self).__init__()
-        self.name = name
-        self.url=url
-        self.name1=name1
-        self.url1=url1
-        self.mutex = QMutex()
+#     def __init__(self, name,url,name1,url1):  #通过初始化赋值的方式实现UI主线程传递值给子线程
+#         super(mythread, self).__init__()
+#         self.name = name
+#         self.url=url
+#         self.name1=name1
+#         self.url1=url1
+#         self.mutex = QMutex()
 
-    def run(self):
-        if "http" in self.url:
-            self.mutex.lock()
-            # print(self.url1)
-            downloader.download([self.url,self.name,self.url1,self.name1])
-            text=self.name.split("music/")[-1].split(".")[0]
-            self.mysignal.emit((text,1))
-            self.mutex.unlock()
+#     def run(self):
+#         if "http" in self.url:
+#             self.mutex.lock()
+#             # print(self.url1)
+#             downloader.download([self.url,self.name,self.url1,self.name1])
+#             text=self.name.split("music/")[-1].split(".")[0]
+#             self.mysignal.emit((text,1))
+#             self.mutex.unlock()
 #搜索歌曲子线程
 class search_thread(QThread):  
     mysignal = pyqtSignal(tuple)  # 创建一个自定义信号，元组参数
 
-    def __init__(self, name,api):  #通过初始化赋值的方式实现UI主线程传递值给子线程
+    def __init__(self, name,api,page):  #通过初始化赋值的方式实现UI主线程传递值给子线程
         super(search_thread, self).__init__()
         self.name = name
         self.api=api
+        self.page=page
         self.mutex = QMutex()
 
     def run(self):
         self.mutex.lock()
         try:
-            name,singer,id=self.api.search(self.name)
-            self.mysignal.emit((name,singer,id))
+            if self.page=='+1':
+                self.api.page+=1
+            elif self.page=='-1':
+                self.api.page-=1
+            page=self.api.page
+            page_chenage=True
+        except AttributeError:
+            page_chenage=False
+        # print(self.api.page)
+        try:
+            if page_chenage:
+                name,singer,id=self.api.search(self.name,page=self.api.page)
+            else:
+                name,singer,id=self.api.search(self.name)
+            page=self.api.page
+            # print(page)
+            self.mysignal.emit((name,singer,id,page))
         except:
             self.mysignal.emit(("搜索失败","无返回结果",""))
         self.mutex.unlock()
