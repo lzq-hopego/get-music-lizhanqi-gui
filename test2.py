@@ -7,12 +7,20 @@ import sys,os
 from ui2 import Ui_MainWindow
 import re
 import cv2
-from get_music import *
 import numpy as np
 import requests
 # import downloader
 import pathlib
 import random
+
+from get_music import kugou
+from get_music import migu
+from get_music import kuwo
+from get_music import netease
+from get_music import qq
+from get_music import oneting
+from get_music import fivesing
+from get_music import baidu
 
 
 class Window(QMainWindow):
@@ -428,6 +436,8 @@ class Window(QMainWindow):
             self.ui.label_11.setVisible(True)
             if self.look_fengmian==False:
                 self.ui.pushButton_8.setVisible(True)
+            else:
+                self.ui.pushButton_8.setVisible(False)
             self.ui.listWidget_2.setVisible(False)
             self.soupage=False
             # self.look_fengmian=False
@@ -465,6 +475,7 @@ class Window(QMainWindow):
             else:
                 self.ui.listWidget_2.addItem("接口失效,可以联系管理员进行修复，QQ邮箱：310197835@qq.com")
         self.ui.listWidget_2.setVisible(True)
+        self.undis_one()
         self.soupage=True
         
 
