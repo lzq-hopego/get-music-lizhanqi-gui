@@ -16,11 +16,13 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setEnabled(True)
         MainWindow.resize(1258, 807)
+        self.MainWindow=MainWindow
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/image/image/5.jpg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         MainWindow.setWindowIcon(icon)
-        self.MainWindow=MainWindow
+        MainWindow.setStyleSheet("")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setStyleSheet("")
         self.centralwidget.setObjectName("centralwidget")
         self.widget = QtWidgets.QWidget(self.centralwidget)
         self.widget.setGeometry(QtCore.QRect(80, 50, 1141, 671))
@@ -181,7 +183,7 @@ class Ui_MainWindow(object):
         self.frame_15.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_15.setObjectName("frame_15")
         self.frame_20 = QtWidgets.QFrame(self.frame_15)
-        self.frame_20.setGeometry(QtCore.QRect(170, 10, 471, 510))
+        self.frame_20.setGeometry(QtCore.QRect(190, 10, 471, 510))
         self.frame_20.setMinimumSize(QtCore.QSize(471, 510))
         self.frame_20.setMaximumSize(QtCore.QSize(471, 510))
         self.frame_20.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -237,14 +239,13 @@ class Ui_MainWindow(object):
         self.listWidget_2.setStyleSheet("border-radius:20px;\n"
 "font: 12pt \"幼圆\";")
         self.listWidget_2.setObjectName("listWidget_2")
-        self.pushButton_8 = QtWidgets.QPushButton(self.frame_15)
-        self.pushButton_8.setGeometry(QtCore.QRect(10, 10, 160, 160))
-        self.pushButton_8.setStyleSheet("border-image: url(:/image/image/5.jpg);\n"
+        self.graphicsView = QtWidgets.QGraphicsView(self.frame_15)
+        self.graphicsView.setGeometry(QtCore.QRect(10, 10, 160, 160))
+        self.graphicsView.setStyleSheet("border-image: url(:/image/image/5.jpg);\n"
 "border-radius:80px;")
-        self.pushButton_8.setText("")
-        self.pushButton_8.setObjectName("pushButton_8")
+        self.graphicsView.setObjectName("graphicsView")
         self.frame_20.raise_()
-        self.pushButton_8.raise_()
+        self.graphicsView.raise_()
         self.listWidget_2.raise_()
         self.horizontalLayout_8.addWidget(self.frame_15)
         self.frame_16 = QtWidgets.QFrame(self.frame_4)
@@ -435,8 +436,6 @@ class Ui_MainWindow(object):
         self.frame_8.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_8.setObjectName("frame_8")
         self.horizontalLayout_6 = QtWidgets.QHBoxLayout(self.frame_8)
-        self.horizontalLayout_6.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout_6.setSpacing(0)
         self.horizontalLayout_6.setObjectName("horizontalLayout_6")
         self.pushButton_7 = QtWidgets.QPushButton(self.frame_8)
         self.pushButton_7.setMinimumSize(QtCore.QSize(30, 30))
@@ -486,9 +485,6 @@ class Ui_MainWindow(object):
         self.pushButton_5.setIconSize(QtCore.QSize(30, 30))
         self.pushButton_5.setObjectName("pushButton_5")
         self.horizontalLayout_6.addWidget(self.pushButton_5)
-        self.horizontalLayout_6.setStretch(0, 1)
-        self.horizontalLayout_6.setStretch(1, 1)
-        self.horizontalLayout_6.setStretch(2, 1)
         self.horizontalLayout_2.addWidget(self.frame_8)
         self.verticalLayout.addWidget(self.frame_5)
         self.verticalLayout.setStretch(0, 1)
@@ -527,5 +523,4 @@ class Ui_MainWindow(object):
         self.label_2.setText(_translate("MainWindow", "歌手"))
         self.label_3.setText(_translate("MainWindow", "00:00"))
         self.label_4.setText(_translate("MainWindow", "00:00"))
-        self.MainWindow=MainWindow
 import image_rc

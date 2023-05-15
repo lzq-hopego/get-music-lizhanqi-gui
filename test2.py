@@ -1,17 +1,19 @@
 from PyQt5.Qt import *
 from PyQt5.QtCore import QTimer, QUrl,QPoint,QCoreApplication
 from PyQt5.QtMultimedia import QMediaPlayer,QMediaPlaylist, QMediaContent
-from PyQt5.QtWidgets import QMenu,QAction,QMessageBox,QFileDialog,QProgressDialog
+from PyQt5.QtWidgets import QMenu,QAction,QMessageBox,QFileDialog,QProgressDialog,QMainWindow
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 from PyQt5 import QtGui
 import sys,os
 from ui2 import Ui_MainWindow
 import re
-import cv2
-import numpy as np
 import requests
-# import downloader
+from Rotation import Rotation
 import pathlib
 import random
+import cgitb
 
 from get_music import kugou
 from get_music import migu
@@ -21,8 +23,9 @@ from get_music import qq
 from get_music import oneting
 from get_music import fivesing
 from get_music import baidu
+from get_music.download import download
 
-
+cgitb.enable(format='text')
 class Window(QMainWindow):
     def __init__(self, parent=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -70,6 +73,11 @@ class Window(QMainWindow):
 
         self.diy_background=False  #当前是否背景自定义
 
+
+        
+
+
+
         self.ui.horizontalSlider_2.valueChanged.connect(self.setvolume)
         self.ui.horizontalSlider.sliderMoved.connect(self.upgrade_value)  
         # self.ui.horizontalSlider.sliderReleased.connect(self.upgrade_value)
@@ -87,13 +95,7 @@ class Window(QMainWindow):
         self.ui.pushButton_12.clicked.connect(self.undis_one)
         self.ui.pushButton_6.clicked.connect(self.search)
         self.ui.listWidget_2.doubleClicked.connect(self.list_download)
-        self.ui.pushButton_8.clicked.connect(self.fengmian)
         self.ui.lineEdit.returnPressed.connect(self.search)
-        # self.ui.pushButton_13.clicked.connect(self.beisu)
-        # self.ui.pushButton.doubleClicked.connect(self.fengmian)
-        # self.ui.pushButton_3.clicked.connect(self.dis_one)
-        # self.ui.pushButton_7.clicked.connect(self.undis_one)
-        # self.ui.widget_4.setVisible(False)
 
 
         #设置右键按钮
@@ -106,8 +108,8 @@ class Window(QMainWindow):
         self.ui.frame_15.setContextMenuPolicy(3)
         self.ui.frame_15.customContextMenuRequested[QPoint].connect(self.rightMenuShowFrame)
 
-        self.ui.pushButton_8.setContextMenuPolicy(3)
-        self.ui.pushButton_8.customContextMenuRequested[QPoint].connect(self.rightMenuShowbutton_8)
+        self.ui.graphicsView.setContextMenuPolicy(3)
+        self.ui.graphicsView.customContextMenuRequested[QPoint].connect(self.rightMenuShowgraphicsView)
 
         self.ui.listWidget_2.setContextMenuPolicy(3)
         self.ui.listWidget_2.customContextMenuRequested[QPoint].connect(self.rightMenuDownload)
@@ -115,7 +117,8 @@ class Window(QMainWindow):
         
         #判断是否在播放时旋转封面，注意由于qt的限制我无法实现圆形封面旋转
         #采用的opencv圆形检测后并保存为test.jpg文件后再显示的，非常消耗内存，默认关闭
-        self.timer.timeout.connect(self.r_fengmian)
+        # self.timer.timeout.connect(self.r_fengmian)
+        # 随机背景
         self.timer2.timeout.connect(self.init_widget_background)
         # self.timer2.start(10000)
         # self.un_background()
@@ -250,9 +253,9 @@ class Window(QMainWindow):
             menu.addAction(QAction(u'自定义背景', self,triggered=self.init_img_list))  #自定义背景
         if self.soupage==False:
             if self.look_fengmian:
-                menu.addAction(QAction(u'取消隐藏', self,triggered=self.look_true_pushButton_8)) #取消隐藏
+                menu.addAction(QAction(u'取消隐藏', self,triggered=self.look_true_graphicsView)) #取消隐藏
             else:
-                menu.addAction(QAction(u'隐藏封面', self,triggered=self.look_false_pushButton_8))  #隐藏封面
+                menu.addAction(QAction(u'隐藏封面', self,triggered=self.look_false_graphicsView))  #隐藏封面
         if self.background_transparent:
             menu.addAction(QAction(u'取消窗体透明度', self,triggered=self.setOpacity))
         else:
@@ -266,7 +269,7 @@ class Window(QMainWindow):
             self.ui.MainWindow.setWindowOpacity(0.5)
             self.background_transparent=True
 
-    def rightMenuShowbutton_8(self):
+    def rightMenuShowgraphicsView(self):
     
         menu=QMenu()
         menu.setStyleSheet("font: 12pt \"幼圆\";\n"
@@ -276,9 +279,7 @@ class Window(QMainWindow):
         else:
             menu.addAction(QAction(u'旋转封面', self,triggered=self.fengmian))  #旋转封面
         if self.look_fengmian==False:
-        #     menu.addAction(QAction(u'取消隐藏', self,triggered=self.look_true_pushButton_8)) #取消隐藏
-        # else:
-            menu.addAction(QAction(u'隐藏封面', self,triggered=self.look_false_pushButton_8))  #隐藏封面
+            menu.addAction(QAction(u'隐藏封面', self,triggered=self.look_false_graphicsView))  #隐藏封面
 
         menu.exec_(QtGui.QCursor.pos())
     def rightMenuShow(self):
@@ -403,12 +404,12 @@ class Window(QMainWindow):
 
 
 
-    def look_true_pushButton_8(self):
-        self.ui.pushButton_8.setVisible(True)
+    def look_true_graphicsView(self):
+        self.ui.graphicsView.setVisible(True)
         self.look_fengmian=False
         self.timer.start(250)
-    def look_false_pushButton_8(self):
-        self.ui.pushButton_8.setVisible(False)
+    def look_false_graphicsView(self):
+        self.ui.graphicsView.setVisible(False)
         self.look_fengmian=True
         self.timer.stop()
     #设置展示搜索列表,不展示歌词和大封面
@@ -421,7 +422,7 @@ class Window(QMainWindow):
             self.ui.label_9.setVisible(False)
             self.ui.label_10.setVisible(False)
             self.ui.label_11.setVisible(False)
-            self.ui.pushButton_8.setVisible(False)
+            self.ui.graphicsView.setVisible(False)
             self.ui.listWidget_2.setVisible(True)
             self.soupage=True
     #设置不展示搜索列表,展示歌词和大封面
@@ -435,9 +436,9 @@ class Window(QMainWindow):
             self.ui.label_10.setVisible(True)
             self.ui.label_11.setVisible(True)
             if self.look_fengmian==False:
-                self.ui.pushButton_8.setVisible(True)
+                self.ui.graphicsView.setVisible(True)
             else:
-                self.ui.pushButton_8.setVisible(False)
+                self.ui.graphicsView.setVisible(False)
             self.ui.listWidget_2.setVisible(False)
             self.soupage=False
             # self.look_fengmian=False
@@ -511,14 +512,19 @@ class Window(QMainWindow):
         except:
             print('歌曲下载失败')
         try:
-            self.jindu(url=img_url,file_name=self.name+".jpg")
+            urlname=img_url.split('.')[-1]
+            if "png" in urlname:
+                file_name=self.name+".png"
+            else:
+                file_name=self.name+".jpg"
+            self.jindu(url=img_url,file_name=file_name)
         except:
             print('封面下载失败')
         
  
         try:
             if "http" in lrc_url:
-                    download.download(lrc_url,"./music/"+self.name+".lrc",or_re=False)
+                    download(lrc_url,"./music/"+self.name+".lrc",or_re=False)
             else:
                 try:
                     with open("./music/"+self.name+".txt",'w') as f:
@@ -582,7 +588,6 @@ class Window(QMainWindow):
 
     #歌曲的播放和暂停
     def dianji(self):
-        
         # self.ui.MainWindow.setWindowOpacity(0.5)
         # touming.show()
         if self.state=="start":
@@ -590,11 +595,16 @@ class Window(QMainWindow):
             self.mixer.pause()
             self.ui.pushButton_3.setIcon(QIcon(":/image/image/播放_play.png"))
             self.timer.stop()
+            self.fengmian()
+            self.turn_fengmian=False
         elif self.state=="stop":
             self.state="start"
             self.mixer.play()
             self.ui.pushButton_3.setIcon(QIcon(":/image/image/暂停_pause-one.png"))
             self.timer.start(250)
+            self.fengmian()
+            self.turn_fengmian=True
+            
     #下一首
     def next(self):
         if self.playlist.nextIndex()==-1:
@@ -731,22 +741,24 @@ class Window(QMainWindow):
             
             self.ui.pushButton.setStyleSheet("border-radius:40px;\n"
 "border-image: url(./music/{});\n".format(ls[0]))
-            self.img=self.init_cv_circle("./music/{}".format(ls[0]))
-            self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
-"border-image: url(./music/{});\n".format(ls[0]))
+            self.img_name="./music/{}".format(ls[0])
 
         else:
-            self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
-                "border-image: url(:/image/image/5.jpg);\n"
-            )
             self.ui.pushButton.setStyleSheet("border-radius:40px;\n"
             "border-image: url(:/image/image/5.jpg);\n"
             )
-            self.img=self.qtpixmap_to_cvimg(QPixmap(":/image/image/5.jpg"))
+            self.img_name=":/image/image/5.jpg"
     
         #初始化封面
-        
-        self.slotRotate()
+        self.rota = Rotation(self.img_name,self.img_name.split('.')[-1])
+        self.scene = QGraphicsScene(self)
+        self.scene.setSceneRect(0, 0, 160,160)
+        self.scene.addItem(self.rota.pixmap_item)
+        self.ui.graphicsView.setScene(self.scene)
+        if self.turn_fengmian==True:
+            self.turn_fengmian=False
+        else:
+            self.turn_fengmian=True
 
         self.show_lrc=True
         #初始化歌词显示
@@ -878,52 +890,19 @@ class Window(QMainWindow):
         self.ui.label_7.setText("")
         self.ui.label_6.setText("")
         self.ui.label_5.setText("")
-    # 旋转封面
-    def r_fengmian(self):
-        self.slotRotate()
+
     
     def fengmian(self):
         if self.turn_fengmian:
             self.turn_fengmian=False
+            self.rota.anim.stop()
+            self.rotate=self.rota.anim.currentValue()
         else:
             self.turn_fengmian=True
-    
-    def slotRotate(self):
-        if self.turn_fengmian==False:
-            return
-        # 效果不好,最后使用opencv做的旋转封面
-        # image=self.cvimg_to_qtimg(self.img)
-        # transform = QTransform()##需要用到pyqt5中QTransform函数
-        # transform.rotate(90) ##设置旋转角度——顺时针旋转90°
-        # self.image=image.transformed(transform)##对image进行旋转
-        # self.ui.pushButton_8.setPixmap(QPixmap(self.image))
-        rows, cols = self.img.shape[:2]
-        c=cols/2
-        r=rows/2
-        
-        M = cv2.getRotationMatrix2D((c, r),self.rotate , 1)
-        #参数：原始图像 旋转参数 元素图像宽高
-        rotated = cv2.warpAffine(self.img, M, (cols, rows))
-        cv2.imwrite("./music/test.jpg",rotated)
-        self.ui.pushButton_8.setStyleSheet("border-radius:80px;\n"
-            "border-image: url(./music/test.jpg);\n")
-        self.rotate-=5
+            self.rota.anim.start()
+            self.rota.anim.setStartValue(self.rotate)
+            self.rota.anim.setEndValue(self.rotate+360)
 
-
-    def init_cv_circle(self,img):
-        image =cv2.imdecode(np.fromfile(img,dtype=np.uint8),-1)
-        return image
-
-    #pt格式的pixmap文件转opencv文件
-    def qtpixmap_to_cvimg(self,qtpixmap):
-        qimg = qtpixmap.toImage()
-        temp_shape = (qimg.height(), qimg.bytesPerLine() * 8 // qimg.depth())
-        temp_shape += (4,)
-        ptr = qimg.bits()
-        ptr.setsize(qimg.byteCount())
-        result = np.array(ptr, dtype=np.uint8).reshape(temp_shape)
-        result = result[..., :3]
-        return result
 
     #窗体拖动
     def mousePressEvent(self, evt):
@@ -943,6 +922,7 @@ class Window(QMainWindow):
             vector_x = self.window_x + move_x
             vector_y = self.window_y + move_y
             self.move(vector_x, vector_y)
+    
 #下载歌曲封面子线程
 # class mythread(QThread):  # 步骤1.创建一个线程实例
 #     mysignal = pyqtSignal(tuple)  # 创建一个自定义信号，元组参数
@@ -997,10 +977,6 @@ class search_thread(QThread):
         except:
             self.mysignal.emit(("搜索失败","无返回结果",""))
         self.mutex.unlock()
-
-
-    
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
